@@ -9,27 +9,20 @@ The system is composed of several components, including data scraping, processin
 ```mermaid
 graph TD;
 
-    N8N[n8n Scraping]
-    EMR[Amazon EMR]
-    FLUME[Apache Flume]
-    MONGO[MongoDB]
-    API[FastAPI]
-    MODEL[Modelo IA HuggingFace]
-    FRONT[React Frontend]
-    HUE[Hue Visualizacion]
-    S3[S3 Images]
-
     N8N --> EMR
     EMR --> FLUME
-    FLUME --> MONGO
-    FLUME --> S3
+    HUE --> HDFS
+    FLUME --> HDFS
 
-    API --> MONGO
-    API --> S3
-    API --> MODEL
+    API --> HDFS
+    API --> LLM
+    API --> CLASSIFICATION_MODEL
+
     FRONT --> API
-    EMR --> HUE
-    FRONT --> EMR
+    FRONT --> MONGODB
+    FRONT --> S3
 ```
 
 For more details, see the [documentation](docs/architecture.md).
+
+
