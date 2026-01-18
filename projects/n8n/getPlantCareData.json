@@ -1,0 +1,328 @@
+{
+   "nodes": [
+      {
+         "parameters": {
+            "options": {}
+         },
+         "type": "n8n-nodes-base.splitInBatches",
+         "typeVersion": 3,
+         "position": [480, 496],
+         "id": "e779d936-8c7e-4252-875c-21507cfa2978",
+         "name": "Loop Over Items"
+      },
+      {
+         "parameters": {},
+         "type": "n8n-nodes-base.manualTrigger",
+         "typeVersion": 1,
+         "position": [32, 496],
+         "id": "711499c5-ace3-4d88-a9c9-8023cd1f3c76",
+         "name": "Páginas que queremos"
+      },
+      {
+         "parameters": {
+            "jsCode": "/**\n * Este codigo recibe las paginas que queremos, de nuestro\n * trigger y genera una lista de numeros desde la primera\n * hasta la ultima\n */\n\nlet start_id = $input.item.json.id_pagina_inicio; \nlet end_id = $input.all()[1].json.id_pagina_fin;\n  \nlet resultado = [];\nfor (let i = start_id; i <= end_id; i++) {\n  resultado.push({ json: { id: i } });\n}\n\nreturn resultado;\n"
+         },
+         "type": "n8n-nodes-base.code",
+         "typeVersion": 2,
+         "position": [256, 496],
+         "id": "605d7e21-5309-4f0e-af2c-559805f0dcbe",
+         "name": "Generar Número Páginas",
+         "alwaysOutputData": true
+      },
+      {
+         "parameters": {
+            "url": "https://perenual.com/api/species-care-guide-list",
+            "authentication": "genericCredentialType",
+            "genericAuthType": "httpQueryAuth",
+            "sendQuery": true,
+            "queryParameters": {
+               "parameters": [
+                  {
+                     "name": "page",
+                     "value": "={{ $json.id }}"
+                  }
+               ]
+            },
+            "options": {}
+         },
+         "type": "n8n-nodes-base.httpRequest",
+         "typeVersion": 4.3,
+         "position": [704, 496],
+         "id": "e20f8283-9821-4fca-8cd3-0af945464056",
+         "name": "GetData",
+         "alwaysOutputData": true,
+         "credentials": {
+            "httpQueryAuth": {
+               "id": "JK74wfbC9qK0o4i1",
+               "name": "Query Auth account"
+            }
+         }
+      },
+      {
+         "parameters": {
+            "fieldToSplitOut": "data",
+            "options": {}
+         },
+         "type": "n8n-nodes-base.splitOut",
+         "typeVersion": 1,
+         "position": [928, 496],
+         "id": "cefa5591-76fc-48eb-ac77-dacdcfa0ab7c",
+         "name": "Split Out"
+      },
+      {
+         "parameters": {
+            "operation": "appendOrUpdate",
+            "documentId": {
+               "__rl": true,
+               "value": "1z4eLAFyyOCKSHF5O3yA6C5PmsPBf_JckWV3yTrpGq1I",
+               "mode": "list",
+               "cachedResultName": "planticas",
+               "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1z4eLAFyyOCKSHF5O3yA6C5PmsPBf_JckWV3yTrpGq1I/edit?usp=drivesdk"
+            },
+            "sheetName": {
+               "__rl": true,
+               "value": "gid=0",
+               "mode": "list",
+               "cachedResultName": "Hoja 1",
+               "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1z4eLAFyyOCKSHF5O3yA6C5PmsPBf_JckWV3yTrpGq1I/edit#gid=0"
+            },
+            "columns": {
+               "mappingMode": "defineBelow",
+               "value": {
+                  "id": "={{ $json.id }}",
+                  "species_id": "={{ $json.species_id }}",
+                  "name": "={{ $json.common_name }}",
+                  "scientific_name": "={{ $json.scientific_name }}",
+                  "watering": "={{ $json.section[0].description }}",
+                  "sunlight": "={{ $json.section[1].description }}",
+                  "pruning": "={{ $json.section[2].description }}"
+               },
+               "matchingColumns": ["id"],
+               "schema": [
+                  {
+                     "id": "id",
+                     "displayName": "id",
+                     "required": false,
+                     "defaultMatch": true,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true,
+                     "removed": false
+                  },
+                  {
+                     "id": "species_id",
+                     "displayName": "species_id",
+                     "required": false,
+                     "defaultMatch": false,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true
+                  },
+                  {
+                     "id": "name",
+                     "displayName": "name",
+                     "required": false,
+                     "defaultMatch": false,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true
+                  },
+                  {
+                     "id": "scientific_name",
+                     "displayName": "scientific_name",
+                     "required": false,
+                     "defaultMatch": false,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true
+                  },
+                  {
+                     "id": "sunlight",
+                     "displayName": "sunlight",
+                     "required": false,
+                     "defaultMatch": false,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true
+                  },
+                  {
+                     "id": "watering",
+                     "displayName": "watering",
+                     "required": false,
+                     "defaultMatch": false,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true
+                  },
+                  {
+                     "id": "pruning",
+                     "displayName": "pruning",
+                     "required": false,
+                     "defaultMatch": false,
+                     "display": true,
+                     "type": "string",
+                     "canBeUsedToMatch": true
+                  }
+               ],
+               "attemptToConvertTypes": false,
+               "convertFieldsToString": false
+            },
+            "options": {}
+         },
+         "type": "n8n-nodes-base.googleSheets",
+         "typeVersion": 4.7,
+         "position": [1152, 568],
+         "id": "215186c8-ad02-4067-b2f1-937cb82e7e04",
+         "name": "Append or update row in sheet",
+         "credentials": {
+            "googleSheetsOAuth2Api": {
+               "id": "MllfFDiVIoBhMCnH",
+               "name": "Google Sheets account"
+            }
+         }
+      },
+      {
+         "parameters": {
+            "operation": "download",
+            "fileId": {
+               "__rl": true,
+               "value": "1z4eLAFyyOCKSHF5O3yA6C5PmsPBf_JckWV3yTrpGq1I",
+               "mode": "list",
+               "cachedResultName": "planticas",
+               "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1z4eLAFyyOCKSHF5O3yA6C5PmsPBf_JckWV3yTrpGq1I/edit?usp=drivesdk"
+            },
+            "options": {
+               "googleFileConversion": {
+                  "conversion": {}
+               },
+               "fileName": "=plants_info_{{ Date.now() }}"
+            }
+         },
+         "type": "n8n-nodes-base.googleDrive",
+         "typeVersion": 3,
+         "position": [704, 304],
+         "id": "aef591b3-23fd-4299-aa6d-17d003a11a70",
+         "name": "Download file to CSV",
+         "executeOnce": true,
+         "credentials": {
+            "googleDriveOAuth2Api": {
+               "id": "aUerufEe1RYbxucA",
+               "name": "Google Drive account"
+            }
+         }
+      },
+      {
+         "parameters": {
+            "content": "### Indicar paginas que queremos\n\nLa API se encuentra paginada, cada una de ellas te da 20 plantas diferentes con sus cuidados.\nDebemos indicar cuales queremos, para no extraer constantemente los mismos datos",
+            "height": 224,
+            "width": 272
+         },
+         "type": "n8n-nodes-base.stickyNote",
+         "position": [-48, 256],
+         "typeVersion": 1,
+         "id": "73c1baaf-032f-4061-8f14-d57d08efaf80",
+         "name": "Sticky Note"
+      },
+      {
+         "parameters": {
+            "content": "## Claves a Configurar\n\n- API Key de Perenual\n- Claves para acceder a Drive y Sheets",
+            "width": 336,
+            "color": 3
+         },
+         "type": "n8n-nodes-base.stickyNote",
+         "position": [288, 256],
+         "typeVersion": 1,
+         "id": "ff7fcd6a-88af-4108-b3e1-113b2a8e5aa5",
+         "name": "Sticky Note1"
+      }
+   ],
+   "connections": {
+      "Loop Over Items": {
+         "main": [
+            [
+               {
+                  "node": "Download file to CSV",
+                  "type": "main",
+                  "index": 0
+               }
+            ],
+            [
+               {
+                  "node": "GetData",
+                  "type": "main",
+                  "index": 0
+               }
+            ]
+         ]
+      },
+      "Páginas que queremos": {
+         "main": [
+            [
+               {
+                  "node": "Generar Número Páginas",
+                  "type": "main",
+                  "index": 0
+               }
+            ]
+         ]
+      },
+      "Generar Número Páginas": {
+         "main": [
+            [
+               {
+                  "node": "Loop Over Items",
+                  "type": "main",
+                  "index": 0
+               }
+            ]
+         ]
+      },
+      "GetData": {
+         "main": [
+            [
+               {
+                  "node": "Split Out",
+                  "type": "main",
+                  "index": 0
+               }
+            ]
+         ]
+      },
+      "Split Out": {
+         "main": [
+            [
+               {
+                  "node": "Append or update row in sheet",
+                  "type": "main",
+                  "index": 0
+               }
+            ]
+         ]
+      },
+      "Append or update row in sheet": {
+         "main": [
+            [
+               {
+                  "node": "Loop Over Items",
+                  "type": "main",
+                  "index": 0
+               }
+            ]
+         ]
+      }
+   },
+   "pinData": {
+      "Páginas que queremos": [
+         {
+            "id_pagina_inicio": 1
+         },
+         {
+            "id_pagina_fin": 2
+         }
+      ]
+   },
+   "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "cf7573937239c7cfe75bf6659fea53f3067f38221a81c7d1ac411f6a31553058"
+   }
+}
