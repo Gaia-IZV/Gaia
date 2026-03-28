@@ -1,6 +1,6 @@
 .PHONY: help build-all build-n8n build-plant-api build-plant-care-api run-plant-api run-plant-care-api \
 	start-apis stop-plant-api stop-plant-care-api rm-plant-api rm-plant-care-api push-plant-api push-plant-care-api \
-	login-dockerhub stop-n8n start-n8n rm-n8n
+	serve-frontend login-dockerhub stop-n8n start-n8n rm-n8n
 
 # Docker Hub (override: make push-plant-api DOCKERHUB_USER=otro PLANT_API_TAG=v1)
 DOCKERHUB_USER ?= eriktortarod
@@ -10,6 +10,9 @@ PLANT_CARE_API_TAG ?= latest
 ## General
 build-all: ## Build all containers
 	@make build-n8n
+
+serve-frontend: ## Chat de prueba en http://localhost:8080 (con las APIs en 5000 y 5001 arrancadas)
+	cd projects/frontend && python -m http.server 8080
 
 help: ## Display this help message
 	@echo "Available commands:"

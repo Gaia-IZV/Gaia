@@ -124,3 +124,11 @@ python main.py
 Disponible en `http://localhost:5001`. Endpoints: `GET /health`, `GET /plant?q=...&k=1`, `POST /plant` con JSON `{"query":"...","k":3}`.
 
 Docker y `make` siguen usando las imágenes `docker/plant-recognition-api` y `docker/plant-care-api`.
+
+## Frontend de prueba (chat)
+
+Interfaz tipo chat en `projects/frontend/`: texto → API de cuidados; imagen → reconocimiento. Muestra el JSON crudo.
+
+1. Arranca reconocimiento (`5000`) y cuidados (`5001`), por ejemplo `make start-apis` o los `main.py` locales.
+2. Instala dependencias actualizadas (`flask-cors`) si usas venv.
+3. Sirve el frontend: `make serve-frontend` y abre `http://localhost:8080`.
