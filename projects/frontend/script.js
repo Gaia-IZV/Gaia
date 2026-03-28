@@ -117,6 +117,24 @@
          };
       }
 
+      const MIN_IMAGE_CONFIDENCE = 0.25;
+
+      function presentCareAssistantResponse(care) {
+         const { ok, data } = care;
+         const human =
+            typeof data?.humanized === "string" && data.humanized.trim();
+         if (ok && human) {
+            appendMessage("assistant", data.humanized.trim(), false, false);
+         } else {
+            appendMessage(
+               "assistant",
+               JSON.stringify(data, null, 2),
+               true,
+               !ok
+            );
+         }
+      }
+
       function appendMessage(role, text, isRawJson = false, isError = false) {
          const wrap = document.createElement("div");
          wrap.className = `msg msg-${role}`;
@@ -235,15 +253,55 @@
             appendMessage("user", `[imagen: ${selectedFile.name}]`);
 
             btnSend.disabled = true;
-            const thinking = startThinking(true);
+            let thinking = startThinking(true);
             try {
-               const { ok, status, data } = await sendRecognition(
+               const { ok, data } = await sendRecognition(
                   selectedFile,
                   recBase()
                );
                thinking.stop();
-               const raw = JSON.stringify(data, null, 2);
-               appendMessage("assistant", raw, true, !ok);
+
+               if (!ok) {
+                  appendMessage(
+                     "assistant",
+                     JSON.stringify(data, null, 2),
+                     true,
+                     true
+                  );
+               } else if (data.error) {
+                  appendMessage("assistant", String(data.error), false, true);
+               } else {
+                  const preds = data.predictions;
+                  let bestProb = -1;
+                  let bestPlant = "";
+                  if (Array.isArray(preds)) {
+                     for (const p of preds) {
+                        const pr =
+                           p && p.probability != null
+                              ? Number(p.probability)
+                              : NaN;
+                        if (Number.isFinite(pr) && pr > bestProb) {
+                           bestProb = pr;
+                           bestPlant =
+                              p.plant != null ? String(p.plant).trim() : "";
+                        }
+                     }
+                  }
+
+                  if (bestProb < MIN_IMAGE_CONFIDENCE || !bestPlant) {
+                     appendMessage(
+                        "assistant",
+                        "No se reconoce la planta en la imagen con suficiente confianza (el resultado más alto está por debajo del 25%). Prueba con otra foto más clara, con buena luz y centrada en la planta.",
+                        false,
+                        false
+                     );
+                  } else {
+                     thinking = startThinking(false);
+                     const care = await sendPlantCare(bestPlant, careBase());
+                     thinking.stop();
+                     presentCareAssistantResponse(care);
+                  }
+               }
             } catch (e) {
                thinking.stop();
                appendMessage("assistant", String(e.message || e), true, true);
@@ -264,14 +322,7 @@
          try {
             const { ok, status, data } = await sendPlantCare(text, careBase());
             thinking.stop();
-            const human =
-               typeof data?.humanized === "string" && data.humanized.trim();
-            if (ok && human) {
-               appendMessage("assistant", data.humanized.trim(), false, false);
-            } else {
-               const raw = JSON.stringify(data, null, 2);
-               appendMessage("assistant", raw, true, !ok);
-            }
+            presentCareAssistantResponse({ ok, data });
          } catch (e) {
             thinking.stop();
             appendMessage("assistant", String(e.message || e), true, true);
