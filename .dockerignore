@@ -1,0 +1,8 @@
+# Shrink build context for images built from repo root (e.g. plant recognition API).
+.git
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+.env
+projects/notebooks

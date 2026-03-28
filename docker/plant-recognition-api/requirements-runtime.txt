@@ -1,0 +1,8 @@
+# Installed after torch (CPU) in Dockerfile — keep in sync with projects/api/requirements.txt (minus torch).
+flask==3.0.0
+werkzeug==3.0.1
+numpy<2
+transformers==4.36.0
+Pillow==10.1.0
+huggingface_hub==0.20.0
+python-dotenv==1.0.0

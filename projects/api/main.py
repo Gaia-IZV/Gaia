@@ -35,5 +35,9 @@ def recognize():
 def health():
     return jsonify({'status': 'ok'})
 
+def _debug_mode() -> bool:
+    v = os.environ.get('FLASK_DEBUG', 'true').strip().lower()
+    return v in ('1', 'true', 'yes')
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=_debug_mode())
