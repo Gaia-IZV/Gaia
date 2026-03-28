@@ -3,52 +3,12 @@
    <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Gaia — prueba APIs</title>
+      <title>Gaia</title>
       <link rel="stylesheet" href="styles.css" />
       <script src="api-bases.js"></script>
    </head>
    <body>
       <div class="app">
-         <header class="header">
-            <h1 class="title">Gaia</h1>
-            <p class="subtitle">
-               Texto → cuidados (plant care) · Imagen → reconocimiento
-            </p>
-            <button
-               type="button"
-               class="btn-ghost"
-               id="btn-settings"
-               aria-expanded="false"
-               aria-controls="settings-panel"
-            >
-               URLs de API
-            </button>
-         </header>
-
-         <div class="settings-panel" id="settings-panel" hidden>
-            <label>
-               Reconocimiento (imagen)
-               <input
-                  type="url"
-                  id="url-recognition"
-                  value="http://localhost:5000"
-                  autocomplete="off"
-               />
-            </label>
-            <label>
-               Cuidados / búsqueda (texto)
-               <input
-                  type="url"
-                  id="url-care"
-                  value="http://localhost:5001"
-                  autocomplete="off"
-               />
-            </label>
-            <p class="settings-hint">
-               Se guardan en el navegador. Arranca ambas APIs o usa Docker.
-            </p>
-         </div>
-
          <main class="chat" id="chat" aria-live="polite"></main>
 
          <footer class="composer-wrap">
@@ -63,7 +23,7 @@
                   type="button"
                   class="btn-icon"
                   id="btn-attach"
-                  title="Adjuntar imagen"
+                  title="Solo imagen (sin texto)"
                   aria-label="Adjuntar imagen"
                >
                   <svg
@@ -83,10 +43,20 @@
                   <textarea
                      id="message-input"
                      rows="1"
-                     placeholder="Escribe una pregunta sobre una planta…"
+                     placeholder="Texto sobre una planta (sin imagen)…"
                      autocomplete="off"
                   ></textarea>
-                  <span class="file-chip" id="file-chip" hidden></span>
+                  <div class="file-row" id="file-row" hidden>
+                     <span class="file-chip" id="file-chip-name"></span>
+                     <button
+                        type="button"
+                        class="btn-clear-file"
+                        id="btn-clear-file"
+                        aria-label="Quitar imagen"
+                     >
+                        ×
+                     </button>
+                  </div>
                </div>
                <button
                   type="button"
@@ -104,14 +74,8 @@
                   </svg>
                </button>
             </div>
-            <p class="composer-note">
-               Sin imagen: cuidados · Con imagen: reconocimiento · Respuesta en
-               JSON. Si en consola ves
-               <code>ERR_BLOCKED_BY_CLIENT</code>, suele ser uBlock/AdBlock:
-               desactívalo en localhost o prueba incógnito.
-            </p>
          </footer>
       </div>
-      <script src="script.js"></script>
+      <script src="script.js?v=3"></script>
    </body>
 </html>

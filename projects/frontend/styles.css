@@ -37,77 +37,6 @@ body {
    margin: 0 auto;
 }
 
-.header {
-   flex-shrink: 0;
-   padding: 1rem 1rem 0.75rem;
-   border-bottom: 1px solid var(--border);
-   background: var(--surface);
-}
-
-.title {
-   margin: 0;
-   font-size: 1.125rem;
-   font-weight: 600;
-   letter-spacing: -0.02em;
-}
-
-.subtitle {
-   margin: 0.25rem 0 0.75rem;
-   font-size: 0.8125rem;
-   color: var(--text-muted);
-   line-height: 1.4;
-}
-
-.btn-ghost {
-   font: inherit;
-   font-size: 0.75rem;
-   color: var(--text-muted);
-   background: transparent;
-   border: 1px solid var(--border);
-   border-radius: 8px;
-   padding: 0.35rem 0.65rem;
-   cursor: pointer;
-}
-
-.btn-ghost:hover {
-   color: var(--text);
-   background: var(--surface-hover);
-}
-
-.settings-panel {
-   flex-shrink: 0;
-   padding: 0.75rem 1rem 1rem;
-   background: var(--surface);
-   border-bottom: 1px solid var(--border);
-   display: flex;
-   flex-direction: column;
-   gap: 0.65rem;
-}
-
-.settings-panel label {
-   display: flex;
-   flex-direction: column;
-   gap: 0.35rem;
-   font-size: 0.75rem;
-   color: var(--text-muted);
-}
-
-.settings-panel input[type="url"] {
-   font: inherit;
-   font-size: 0.875rem;
-   padding: 0.5rem 0.65rem;
-   border-radius: 8px;
-   border: 1px solid var(--border);
-   background: var(--bg);
-   color: var(--text);
-}
-
-.settings-hint {
-   margin: 0;
-   font-size: 0.7rem;
-   color: var(--text-muted);
-}
-
 .chat {
    flex: 1;
    overflow-y: auto;
@@ -133,13 +62,6 @@ body {
    align-self: stretch;
 }
 
-.msg-meta {
-   font-size: 0.7rem;
-   color: var(--text-muted);
-   text-transform: uppercase;
-   letter-spacing: 0.04em;
-}
-
 .msg-bubble {
    padding: 0.75rem 1rem;
    border-radius: var(--radius);
@@ -159,6 +81,69 @@ body {
    background: var(--assistant-bg);
    border: 1px solid var(--border);
    max-width: 100%;
+}
+
+.msg-assistant .msg-bubble.msg-thinking {
+   display: inline-flex;
+   align-items: center;
+   gap: 0.35rem;
+   max-width: 100%;
+   color: var(--text-muted);
+   font-size: 0.875rem;
+   animation: thinking-pulse 2s ease-in-out infinite;
+}
+
+.msg-thinking-label {
+   min-height: 1.35em;
+}
+
+.msg-thinking-dots {
+   display: inline-flex;
+   letter-spacing: 0.02em;
+}
+
+.msg-thinking-dot {
+   display: inline-block;
+   animation: thinking-dot 1.05s ease-in-out infinite;
+   opacity: 0.35;
+}
+
+.msg-thinking-dot:nth-child(1) {
+   animation-delay: 0s;
+}
+
+.msg-thinking-dot:nth-child(2) {
+   animation-delay: 0.2s;
+}
+
+.msg-thinking-dot:nth-child(3) {
+   animation-delay: 0.4s;
+}
+
+@keyframes thinking-dot {
+
+   0%,
+   100% {
+      opacity: 0.3;
+      transform: translateY(0);
+   }
+
+   50% {
+      opacity: 1;
+      transform: translateY(-2px);
+   }
+}
+
+@keyframes thinking-pulse {
+
+   0%,
+   100% {
+      opacity: 0.72;
+   }
+
+   50% {
+      opacity: 1;
+   }
 }
 
 .msg-assistant .msg-bubble.raw {
@@ -218,9 +203,42 @@ body {
    outline: none;
 }
 
+#message-input:disabled {
+   opacity: 0.55;
+   cursor: not-allowed;
+}
+
+.file-row {
+   display: flex;
+   align-items: center;
+   gap: 0.35rem;
+   font-size: 0.8125rem;
+}
+
 .file-chip {
-   font-size: 0.75rem;
    color: var(--accent);
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+
+.btn-clear-file {
+   flex-shrink: 0;
+   width: 1.75rem;
+   height: 1.75rem;
+   padding: 0;
+   font: inherit;
+   font-size: 1.1rem;
+   line-height: 1;
+   color: var(--text-muted);
+   background: var(--surface-hover);
+   border: 1px solid var(--border);
+   border-radius: 6px;
+   cursor: pointer;
+}
+
+.btn-clear-file:hover {
+   color: var(--text);
 }
 
 .btn-icon,
@@ -238,9 +256,14 @@ body {
    background: transparent;
 }
 
-.btn-icon:hover {
+.btn-icon:hover:not(:disabled) {
    color: var(--text);
    background: var(--surface-hover);
+}
+
+.btn-icon:disabled {
+   opacity: 0.35;
+   cursor: not-allowed;
 }
 
 .btn-send {
@@ -255,13 +278,6 @@ body {
 .btn-send:disabled {
    opacity: 0.45;
    cursor: not-allowed;
-}
-
-.composer-note {
-   margin: 0.5rem 0 0;
-   font-size: 0.65rem;
-   color: var(--text-muted);
-   line-height: 1.35;
 }
 
 .empty-hint {
