@@ -304,3 +304,6 @@ po/*~
 rsconnect/
 
 .vscode
+
+static/models/*
+!static/models/*.zip
