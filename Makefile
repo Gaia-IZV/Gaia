@@ -1,107 +1,48 @@
-.PHONY: help build-all build-n8n build-plant-api build-plant-care-api run-plant-api run-plant-care-api \
-	start-apis stop-plant-api stop-plant-care-api rm-plant-api rm-plant-care-api push-plant-api push-plant-care-api \
-	serve-frontend login-dockerhub stop-n8n start-n8n rm-n8n
+.PHONY: help up down logs build-web login push-apis push-web
 
-# Docker Hub (override: make push-plant-api DOCKERHUB_USER=otro PLANT_API_TAG=v1)
+# Docker Hub (override: make up DOCKERHUB_USER=otro API_TAG=v1)
 DOCKERHUB_USER ?= eriktortarod
-PLANT_API_TAG ?= latest
-PLANT_CARE_API_TAG ?= latest
+API_TAG ?= latest
+WEB_TAG ?= latest
+GAIA_HTTP_PORT ?= 8080
 
-## General
-build-all: ## Build all containers
-	@make build-n8n
+COMPOSE_ENV := DOCKERHUB_USER=$(DOCKERHUB_USER) API_TAG=$(API_TAG) WEB_TAG=$(WEB_TAG) GAIA_HTTP_PORT=$(GAIA_HTTP_PORT)
+COMPOSE := $(COMPOSE_ENV) docker compose -f docker-compose.yml
 
-serve-frontend: ## Chat de prueba en http://localhost:8080 (con las APIs en 5000 y 5001 arrancadas)
-	cd projects/frontend && python -m http.server 8080
+## Stack Gaia (producción simulada)
+help: ## Mostrar objetivos
+	@echo "Gaia — Docker Compose (APIs desde Hub, web con nginx en :$(GAIA_HTTP_PORT))"
+	@echo ""
+	@echo "  make up          Levanta todo (pull APIs, build frontend si hace falta)"
+	@echo "  make down        Para y elimina contenedores"
+	@echo "  make logs        Logs de los tres servicios"
+	@echo "  make build-web   Solo imagen del frontend"
+	@echo "  make login       docker login Docker Hub"
+	@echo "  make push-apis   Build local + push reconocimiento y cuidados"
+	@echo "  make push-web    Build + push frontend"
+	@echo ""
+	@echo "Variables: DOCKERHUB_USER API_TAG WEB_TAG GAIA_HTTP_PORT"
 
-help: ## Display this help message
-	@echo "Available commands:"
-	@awk 'BEGIN {FS=":.*## "; category=""} \
-		/^## [^#]/ { \
-			if (category) printf "\n"; \
-			category=$$0; gsub(/^## /, "", category); \
-			printf "\033[1m%s:\033[0m\n", category; \
-			next \
-		} \
-		/^[[:space:]]*[a-zA-Z0-9_-]+:.*## / { \
-			printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2 \
-		}' $(MAKEFILE_LIST)
+up: ## Pull imágenes Hub + build frontend + arranque en http://localhost:$(GAIA_HTTP_PORT)
+	$(COMPOSE) up -d --build --pull always
 
-## n8n
-build-n8n: ## Build and start n8n workflow container
-	@echo "Building n8n image..."
-	cd docker && docker build -f Dockerfile.n8n -t n8n .
-	@echo "Starting n8n container..."
-	docker run -d \
-		--name n8n \
-		-p 5678:5678 \
-		-v ~/.n8n:/home/node/.n8n \
-		n8n
-	@echo "n8n running at http://localhost:5678"
+down: ## Parar stack
+	$(COMPOSE) down
 
-start-n8n: ## Start existing n8n container
-	@docker start n8n 
+logs: ## Seguir logs
+	$(COMPOSE) logs -f
 
-stop-n8n: ## Stop n8n container
-	@docker stop n8n
+build-web: ## Construir solo la imagen gaia-frontend
+	$(COMPOSE) build frontend
 
-rm-n8n: ## Stop and remove n8n container
-	@docker rm n8n
-
-## Plant recognition API
-build-plant-api: ## Build plant recognition API image
-	docker build -f docker/plant-recognition-api/Dockerfile -t gaia-plant-recognition-api .
-
-run-plant-api: ## Run plant recognition API on port 5000 (uses projects/api/.env if the file exists)
-	docker run --rm -d \
-		--name gaia-plant-api \
-		-p 5000:5000 \
-		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
-		gaia-plant-recognition-api
-
-stop-plant-api: ## Stop plant recognition API container
-	@docker stop gaia-plant-api
-
-rm-plant-api: ## Stop and remove plant recognition API container
-	@docker rm -f gaia-plant-api 2>/dev/null || true
-
-login-dockerhub: ## Log in to Docker Hub (run once per machine / when token expires)
+login: ## Iniciar sesión en Docker Hub
 	docker login -u $(DOCKERHUB_USER)
 
-push-plant-api: build-plant-api ## Build, tag, and push plant API (DOCKERHUB_USER=$(DOCKERHUB_USER), PLANT_API_TAG)
-	docker tag gaia-plant-recognition-api:latest $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(PLANT_API_TAG)
-	docker push $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(PLANT_API_TAG)
+push-apis: ## Build local de ambas APIs y push a $(DOCKERHUB_USER)/*:$(API_TAG)
+	docker build -f docker/plant-recognition-api/Dockerfile -t $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(API_TAG) .
+	docker build -f docker/plant-care-api/Dockerfile -t $(DOCKERHUB_USER)/gaia-plant-care-api:$(API_TAG) .
+	docker push $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(API_TAG)
+	docker push $(DOCKERHUB_USER)/gaia-plant-care-api:$(API_TAG)
 
-## Plant care API (semantic search over cuidados_plantas.csv, port 5001)
-build-plant-care-api: ## Build plant care / semantic search API image
-	docker build -f docker/plant-care-api/Dockerfile -t gaia-plant-care-api .
-
-run-plant-care-api: ## Run plant care API on port 5001 (optional projects/api/.env)
-	docker run --rm -d \
-		--name gaia-plant-care-api \
-		-p 5001:5001 \
-		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
-		gaia-plant-care-api
-
-stop-plant-care-api: ## Stop plant care API container
-	@docker stop gaia-plant-care-api
-
-rm-plant-care-api: ## Stop and remove plant care API container
-	@docker rm -f gaia-plant-care-api 2>/dev/null || true
-
-push-plant-care-api: build-plant-care-api ## Build, tag, and push plant care API (PLANT_CARE_API_TAG)
-	docker tag gaia-plant-care-api:latest $(DOCKERHUB_USER)/gaia-plant-care-api:$(PLANT_CARE_API_TAG)
-	docker push $(DOCKERHUB_USER)/gaia-plant-care-api:$(PLANT_CARE_API_TAG)
-
-start-apis: rm-plant-api rm-plant-care-api ## Run recognition (5000) + plant care (5001); build images first if needed
-	docker run --rm -d \
-		--name gaia-plant-api \
-		-p 5000:5000 \
-		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
-		gaia-plant-recognition-api
-	docker run --rm -d \
-		--name gaia-plant-care-api \
-		-p 5001:5001 \
-		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
-		gaia-plant-care-api
-	@echo "Recognition API: http://localhost:5000  |  Plant care API: http://localhost:5001"
+push-web: build-web ## Build frontend y push a $(DOCKERHUB_USER)/gaia-frontend:$(WEB_TAG)
+	docker push $(DOCKERHUB_USER)/gaia-frontend:$(WEB_TAG)

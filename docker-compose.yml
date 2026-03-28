@@ -1,0 +1,36 @@
+# Stack tipo producción: APIs desde Docker Hub; frontend con nginx (proxy /api/r, /api/c).
+# Uso: make up  →  http://localhost:8080
+#
+# Variables: DOCKERHUB_USER, API_TAG, WEB_TAG, GAIA_HTTP_PORT
+
+name: gaia
+
+services:
+  plant-recognition:
+    image: ${DOCKERHUB_USER:-eriktortarod}/gaia-plant-recognition-api:${API_TAG:-latest}
+    pull_policy: always
+    env_file:
+      - path: projects/api/.env
+        required: false
+    expose:
+      - "5000"
+
+  plant-care:
+    image: ${DOCKERHUB_USER:-eriktortarod}/gaia-plant-care-api:${API_TAG:-latest}
+    pull_policy: always
+    env_file:
+      - path: projects/api/.env
+        required: false
+    expose:
+      - "5001"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    image: ${DOCKERHUB_USER:-eriktortarod}/gaia-frontend:${WEB_TAG:-latest}
+    ports:
+      - "${GAIA_HTTP_PORT:-8080}:80"
+    depends_on:
+      - plant-recognition
+      - plant-care

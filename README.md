@@ -123,12 +123,30 @@ python main.py
 
 Disponible en `http://localhost:5001`. Endpoints: `GET /health`, `GET /plant?q=...&k=1`, `POST /plant` con JSON `{"query":"...","k":3}`.
 
-Docker y `make` siguen usando las imágenes `docker/plant-recognition-api` y `docker/plant-care-api`.
+Los Dockerfiles de las APIs están en `docker/plant-recognition-api` y `docker/plant-care-api`.
+
+## Stack Docker (tipo producción)
+
+Todo el stack con **imágenes desde Docker Hub** y un **frontend nginx** que hace de proxy (`/api/r` → reconocimiento, `/api/c` → cuidados), así el chat usa el **mismo origen** y evita CORS y bloqueadores.
+
+```bash
+make login          # una vez, para pull/push
+make up             # pull APIs + build web + http://localhost:8080
+make logs
+make down
+```
+
+Variables útiles: `DOCKERHUB_USER`, `API_TAG`, `WEB_TAG`, `GAIA_HTTP_PORT`. El fichero `projects/api/.env` (opcional) se inyecta en los contenedores de las APIs.
+
+Publicar imágenes propias:
+
+```bash
+make push-apis      # build local + push reconocimiento y cuidados
+make push-web       # build + push frontend (nginx)
+```
+
+Desarrollo **sin** Docker: ejecuta las dos APIs con `python main.py` y abre `projects/frontend/index.html` vía `python -m http.server` en esa carpeta; `api-bases.js` apunta a `127.0.0.1:5000` y `5001`.
 
 ## Frontend de prueba (chat)
 
-Interfaz tipo chat en `projects/frontend/`: texto → API de cuidados; imagen → reconocimiento. Muestra el JSON crudo.
-
-1. Arranca reconocimiento (`5000`) y cuidados (`5001`), por ejemplo `make start-apis` o los `main.py` locales.
-2. Instala dependencias actualizadas (`flask-cors`) si usas venv.
-3. Sirve el frontend: `make serve-frontend` y abre `http://localhost:8080`.
+En `projects/frontend/`: texto → cuidados; imagen → reconocimiento; respuesta JSON en bruto. Con Docker Compose las URLs por defecto pasan por el proxy del propio nginx.

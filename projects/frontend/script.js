@@ -16,11 +16,28 @@ const urlCare = document.getElementById("url-care");
 
 let selectedFile = null;
 
+function defaultBases() {
+   if (
+      typeof window.GAIA_API_BASES === "object" &&
+      window.GAIA_API_BASES?.recognition &&
+      window.GAIA_API_BASES?.care
+   ) {
+      return {
+         recognition: window.GAIA_API_BASES.recognition,
+         care: window.GAIA_API_BASES.care,
+      };
+   }
+   return {
+      recognition: "http://127.0.0.1:5000",
+      care: "http://127.0.0.1:5001",
+   };
+}
+
 function loadUrls() {
+   const d = defaultBases();
    urlRecognition.value =
-      localStorage.getItem(STORAGE_KEYS.recognition) || "http://localhost:5000";
-   urlCare.value =
-      localStorage.getItem(STORAGE_KEYS.care) || "http://localhost:5001";
+      localStorage.getItem(STORAGE_KEYS.recognition) || d.recognition;
+   urlCare.value = localStorage.getItem(STORAGE_KEYS.care) || d.care;
 }
 
 function saveUrls() {
