@@ -5,7 +5,8 @@ from flask import Flask, jsonify, request
 
 from plant_semantic_search import search_plants
 
-load_dotenv()
+_API_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+load_dotenv(os.path.join(_API_ROOT, ".env"))
 
 app = Flask(__name__)
 

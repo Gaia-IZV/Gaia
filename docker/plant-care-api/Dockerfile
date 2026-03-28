@@ -16,9 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY docker/plant-care-api/requirements-runtime.txt /tmp/requirements-runtime.txt
 COPY static/data/cuidados_plantas.csv /app/data/cuidados_plantas.csv
-COPY projects/plant-care-api/main.py \
-    projects/plant-care-api/plant_semantic_search.py \
-    projects/plant-care-api/build_faiss_index.py \
+COPY projects/api/plant_care/main.py \
+    projects/api/plant_care/plant_semantic_search.py \
+    projects/api/plant_care/build_faiss_index.py \
     ./
 
 RUN pip install --no-cache-dir --upgrade pip && \

@@ -21,7 +21,7 @@ _load_lock = threading.Lock()
 
 def _default_csv_path() -> str:
     base = os.path.dirname(os.path.abspath(__file__))
-    return os.path.abspath(os.path.join(base, "..", "..", "static", "data", "cuidados_plantas.csv"))
+    return os.path.abspath(os.path.join(base, "..", "..", "..", "static", "data", "cuidados_plantas.csv"))
 
 
 def _csv_path() -> str:

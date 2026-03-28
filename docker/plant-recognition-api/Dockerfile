@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/plant-recognition-api/requirements-runtime.txt /tmp/requirements-runtime.txt
-COPY projects/api/main.py projects/api/image_recognition_model.py ./
+COPY projects/api/plant_recognition/main.py projects/api/plant_recognition/image_recognition_model.py ./
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu && \

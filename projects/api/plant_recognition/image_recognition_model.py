@@ -1,10 +1,11 @@
+import os
 import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 from PIL import Image
-import os
 from dotenv import load_dotenv
 
-load_dotenv()
+_API_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+load_dotenv(os.path.join(_API_ROOT, ".env"))
 
 MODEL_ID = "juppy44/plant-identification-2m-vit-b"
 HF_TOKEN = os.environ.get('HF_TOKEN')

@@ -1,4 +1,4 @@
-# Installed after torch (CPU) in Dockerfile — keep in sync with projects/api/requirements.txt (minus torch).
+# Installed after torch (CPU) in Dockerfile — keep in sync with projects/api/plant_recognition/requirements.txt (minus torch).
 flask==3.0.0
 werkzeug==3.0.1
 numpy<2
