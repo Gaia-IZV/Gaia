@@ -264,8 +264,14 @@
          try {
             const { ok, status, data } = await sendPlantCare(text, careBase());
             thinking.stop();
-            const raw = JSON.stringify(data, null, 2);
-            appendMessage("assistant", raw, true, !ok);
+            const human =
+               typeof data?.humanized === "string" && data.humanized.trim();
+            if (ok && human) {
+               appendMessage("assistant", data.humanized.trim(), false, false);
+            } else {
+               const raw = JSON.stringify(data, null, 2);
+               appendMessage("assistant", raw, true, !ok);
+            }
          } catch (e) {
             thinking.stop();
             appendMessage("assistant", String(e.message || e), true, true);

@@ -1,6 +1,7 @@
 # Installed after torch (CPU) in Dockerfile — keep in sync with projects/api/plant_care/requirements.txt (minus torch).
 flask==3.0.0
 flask-cors==4.0.0
+requests==2.31.0
 werkzeug==3.0.1
 numpy<2
 pandas==2.2.0
