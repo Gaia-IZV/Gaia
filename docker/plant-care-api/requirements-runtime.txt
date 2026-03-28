@@ -1,0 +1,8 @@
+# Installed after torch (CPU) in Dockerfile — keep in sync with projects/plant-care-api/requirements.txt (minus torch).
+flask==3.0.0
+werkzeug==3.0.1
+numpy<2
+pandas==2.2.0
+python-dotenv==1.0.0
+sentence-transformers==2.6.1
+faiss-cpu==1.8.0

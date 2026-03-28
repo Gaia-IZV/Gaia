@@ -1,8 +1,11 @@
-.PHONY: help build-all build-n8n build-plant-api run-plant-api stop-plant-api rm-plant-api push-plant-api login-dockerhub stop-n8n start-n8n rm-n8n
+.PHONY: help build-all build-n8n build-plant-api build-plant-care-api run-plant-api run-plant-care-api \
+	start-apis stop-plant-api stop-plant-care-api rm-plant-api rm-plant-care-api push-plant-api push-plant-care-api \
+	login-dockerhub stop-n8n start-n8n rm-n8n
 
 # Docker Hub (override: make push-plant-api DOCKERHUB_USER=otro PLANT_API_TAG=v1)
 DOCKERHUB_USER ?= eriktortarod
 PLANT_API_TAG ?= latest
+PLANT_CARE_API_TAG ?= latest
 
 ## General
 build-all: ## Build all containers
@@ -65,3 +68,37 @@ login-dockerhub: ## Log in to Docker Hub (run once per machine / when token expi
 push-plant-api: build-plant-api ## Build, tag, and push plant API (DOCKERHUB_USER=$(DOCKERHUB_USER), PLANT_API_TAG)
 	docker tag gaia-plant-recognition-api:latest $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(PLANT_API_TAG)
 	docker push $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(PLANT_API_TAG)
+
+## Plant care API (semantic search over cuidados_plantas.csv, port 5001)
+build-plant-care-api: ## Build plant care / semantic search API image
+	docker build -f docker/plant-care-api/Dockerfile -t gaia-plant-care-api .
+
+run-plant-care-api: ## Run plant care API on port 5001 (optional projects/api/.env)
+	docker run --rm -d \
+		--name gaia-plant-care-api \
+		-p 5001:5001 \
+		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
+		gaia-plant-care-api
+
+stop-plant-care-api: ## Stop plant care API container
+	@docker stop gaia-plant-care-api
+
+rm-plant-care-api: ## Stop and remove plant care API container
+	@docker rm -f gaia-plant-care-api 2>/dev/null || true
+
+push-plant-care-api: build-plant-care-api ## Build, tag, and push plant care API (PLANT_CARE_API_TAG)
+	docker tag gaia-plant-care-api:latest $(DOCKERHUB_USER)/gaia-plant-care-api:$(PLANT_CARE_API_TAG)
+	docker push $(DOCKERHUB_USER)/gaia-plant-care-api:$(PLANT_CARE_API_TAG)
+
+start-apis: rm-plant-api rm-plant-care-api ## Run recognition (5000) + plant care (5001); build images first if needed
+	docker run --rm -d \
+		--name gaia-plant-api \
+		-p 5000:5000 \
+		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
+		gaia-plant-recognition-api
+	docker run --rm -d \
+		--name gaia-plant-care-api \
+		-p 5001:5001 \
+		$$(test -f projects/api/.env && echo "--env-file projects/api/.env") \
+		gaia-plant-care-api
+	@echo "Recognition API: http://localhost:5000  |  Plant care API: http://localhost:5001"
