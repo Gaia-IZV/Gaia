@@ -19,14 +19,11 @@ This document summarizes the current Gaia architecture and runtime layers.
 -  n8n flow definition: `projects/n8n/getPlantCareData.json`
 -  n8n usage notes: `docs/n8n/flows.md`
 
-## Runtime Diagram
+## Architecture Diagrams
 
-```mermaid
-graph TD
-  FE[Frontend - nginx] --> PR[Plant Recognition API]
-  FE --> PC[Plant Care API]
-  PC --> DATA[(CSV/FAISS data)]
-  PR --> HF[Hugging Face model hub]
-  TF[Terraform AWS] --> EC2[EC2 instance]
-  EC2 --> DC[Docker Compose stack]
-```
+This page uses the same canonical diagrams defined in:
+
+-  Simple architecture diagram: `README.md`
+-  Detailed architecture diagram: `docs/README.md`
+
+The two diagrams above are the project references and should be used as the source of truth.
