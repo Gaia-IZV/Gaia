@@ -12,6 +12,9 @@ services:
     env_file:
       - path: projects/api/.env
         required: false
+    environment:
+      HF_HUB_DOWNLOAD_TIMEOUT: 120
+      HF_HUB_ETAG_TIMEOUT: 120
     expose:
       - "5000"
 
