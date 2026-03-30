@@ -307,3 +307,5 @@ rsconnect/
 
 static/models/*
 !static/models/*.zip
+
+static/*.pem
