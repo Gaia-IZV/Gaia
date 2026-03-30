@@ -23,7 +23,7 @@ graph TD;
     FRONT --> S3
 ```
 
-For more details, see the [documentation](docs/architecture.md).
+For more details, see the [documentation](docs/infrastructure/architecture.md).
 
 ## APIs (`projects/api/`)
 
