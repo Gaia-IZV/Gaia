@@ -1,4 +1,4 @@
-# Gaia
+# Gaia <img src="static/images/logo_small.jpg" alt="Gaia logo" width="26" style="margin-left: 8px; vertical-align: middle;" />
 
 Gaia is an AI-assisted plant support project with two backend APIs and a web frontend:
 
