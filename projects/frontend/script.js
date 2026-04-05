@@ -7,23 +7,12 @@
       return localStorage.getItem(STORAGE_KEY);
    }
 
-   function setUsername(name) {
-      localStorage.setItem(STORAGE_KEY, name.trim());
-   }
-
-   function promptUsername() {
-      let name = "";
-      while (!name || !name.trim()) {
-         name = prompt("¿Cómo te llamas?");
-         if (name === null) {
-            name = "Usuario";
-         }
-      }
-      setUsername(name);
-      return name.trim();
-   }
-
    function main() {
+      if (!getUsername()) {
+         window.location.href = "login.html";
+         return;
+      }
+
       const chatEl = document.getElementById("chat");
       const headerEl = document.getElementById("app-header");
       const inputEl = document.getElementById("message-input");
@@ -34,10 +23,7 @@
       const btnSend = document.getElementById("btn-send");
       const btnAttach = document.getElementById("btn-attach");
 
-      let username = getUsername();
-      if (!username) {
-         username = promptUsername();
-      }
+      const username = getUsername();
       headerEl.textContent = `Hola, ${username} 👋`;
 
       if (
