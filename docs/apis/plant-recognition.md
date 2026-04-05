@@ -2,6 +2,12 @@
 
 The Plant Recognition API classifies an uploaded plant image and returns the top predictions.
 
+## Model
+
+We use a pre-trained model from Hugging Face: **`juppy44/plant-identification-2m-vit-b`**
+- This is a Vision Transformer (ViT) model trained on ~2 million plant images
+- The model is loaded via the `transformers` library from Hugging Face
+
 ## Related Code
 
 -  API entrypoint: `projects/api/plant_recognition/main.py`
@@ -17,7 +23,9 @@ The Plant Recognition API classifies an uploaded plant image and returns the top
 
 ## Endpoint Summary
 
--  `POST /recognize`: receives `multipart/form-data` with `image`
+-  `POST /recognize`: receives `multipart/form-data` with `image` and optional `username`
+-  Returns top 5 predictions with probabilities
+-  If confidence >= 25%, uploads image to S3 and returns the URL
 -  `GET /health`: service health check
 
 ## Quick Local Run

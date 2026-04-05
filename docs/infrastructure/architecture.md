@@ -10,6 +10,13 @@ This document summarizes the current Gaia architecture and runtime layers.
 -  **Storage and services**: optional MongoDB and S3 usage via environment flags
 -  **Deployment**: local Docker Compose and AWS EC2 (Terraform + Docker Compose)
 
+## Storage (S3)
+
+We use AWS S3 to store uploaded plant images:
+- Images are uploaded when plant recognition confidence >= 25%
+- Each user gets their own folder in the S3 bucket (named after their username)
+- Bucket name and credentials are configured via `.env`
+
 ## Infrastructure References
 
 -  Terraform AWS config: `infra/terraform/`
