@@ -23,10 +23,13 @@ def recognize():
     if not allowed_file(file.filename):
         return jsonify({'error': 'Invalid file type'}), 400
     
+    username = request.form.get('username', 'uploads')
+    safe_username = "".join(c for c in username if c.isalnum() or c in '-_').strip() or 'uploads'
+    
     with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
         file.save(tmp.name)
         try:
-            result = recognize_plant(tmp.name)
+            result = recognize_plant(tmp.name, safe_username)
         finally:
             os.unlink(tmp.name)
     

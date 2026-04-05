@@ -40,7 +40,7 @@ def load_model():
         model.eval()
     return model, processor
 
-def recognize_plant(image_path: str) -> dict:
+def recognize_plant(image_path: str, username: str = "uploads") -> dict:
     model, processor = load_model()
     
     image = Image.open(image_path).convert("RGB")
@@ -62,14 +62,14 @@ def recognize_plant(image_path: str) -> dict:
     
     s3_url = None
     if top_probability >= 0.25:
-        s3_url = upload_to_s3(image_path)
+        s3_url = upload_to_s3(image_path, username)
     
     return {"predictions": results, "s3_url": s3_url}
 
 
-def upload_to_s3(image_path: str) -> str:
+def upload_to_s3(image_path: str, username: str = "uploads") -> str:
     ext = os.path.splitext(image_path)[1].lower()
-    key = f"uploads/{uuid.uuid4()}{ext}"
+    key = f"{username}/{uuid.uuid4()}{ext}"
     
     with open(image_path, 'rb') as f:
         s3_client.upload_fileobj(

@@ -1,8 +1,31 @@
 (function () {
    "use strict";
 
+   const STORAGE_KEY = "gaia_username";
+
+   function getUsername() {
+      return localStorage.getItem(STORAGE_KEY);
+   }
+
+   function setUsername(name) {
+      localStorage.setItem(STORAGE_KEY, name.trim());
+   }
+
+   function promptUsername() {
+      let name = "";
+      while (!name || !name.trim()) {
+         name = prompt("¿Cómo te llamas?");
+         if (name === null) {
+            name = "Usuario";
+         }
+      }
+      setUsername(name);
+      return name.trim();
+   }
+
    function main() {
       const chatEl = document.getElementById("chat");
+      const headerEl = document.getElementById("app-header");
       const inputEl = document.getElementById("message-input");
       const fileInput = document.getElementById("file-input");
       const fileRow = document.getElementById("file-row");
@@ -10,6 +33,12 @@
       const btnClearFile = document.getElementById("btn-clear-file");
       const btnSend = document.getElementById("btn-send");
       const btnAttach = document.getElementById("btn-attach");
+
+      let username = getUsername();
+      if (!username) {
+         username = promptUsername();
+      }
+      headerEl.textContent = `Hola, ${username} 👋`;
 
       if (
          !chatEl ||
@@ -206,9 +235,10 @@
          autoResize();
       }
 
-      async function sendRecognition(file, base) {
+      async function sendRecognition(file, base, username) {
          const fd = new FormData();
          fd.append("image", file);
+         fd.append("username", username);
          const res = await fetch(`${base}/recognize`, {
             method: "POST",
             body: fd,
@@ -257,7 +287,8 @@
             try {
                const { ok, data } = await sendRecognition(
                   selectedFile,
-                  recBase()
+                  recBase(),
+                  username
                );
                thinking.stop();
 
