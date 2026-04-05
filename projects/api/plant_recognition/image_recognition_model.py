@@ -1,14 +1,32 @@
 import os
+import uuid
 import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 from PIL import Image
 from dotenv import load_dotenv
+import boto3
+from botocore.config import Config
 
 _API_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 load_dotenv(os.path.join(_API_ROOT, ".env"))
 
 MODEL_ID = "juppy44/plant-identification-2m-vit-b"
 HF_TOKEN = os.environ.get('HF_TOKEN')
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_SESSION_TOKEN = os.environ.get('AWS_SESSION_TOKEN')
+AWS_REGION = os.environ.get('AWS_REGION')
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME')
+
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    aws_session_token=AWS_SESSION_TOKEN,
+    region_name=AWS_REGION,
+    config=Config(signature_version='s3v4')
+)
 
 model = None
 processor = None
@@ -40,4 +58,25 @@ def recognize_plant(image_path: str) -> dict:
         label = model.config.id2label[idx.item()]
         results.append({"plant": label, "probability": round(prob.item(), 4)})
     
-    return {"predictions": results}
+    top_probability = topk.values[0].item()
+    
+    s3_url = None
+    if top_probability >= 0.25:
+        s3_url = upload_to_s3(image_path)
+    
+    return {"predictions": results, "s3_url": s3_url}
+
+
+def upload_to_s3(image_path: str) -> str:
+    ext = os.path.splitext(image_path)[1].lower()
+    key = f"uploads/{uuid.uuid4()}{ext}"
+    
+    with open(image_path, 'rb') as f:
+        s3_client.upload_fileobj(
+            f,
+            S3_BUCKET_NAME,
+            key,
+            ExtraArgs={'ContentType': 'image/jpeg'}
+        )
+    
+    return f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{key}"
