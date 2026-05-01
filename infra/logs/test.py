@@ -6,9 +6,9 @@ from pyhive import hive
 print("Connecting to Hive...")
 
 conn = hive.Connection(
-    host="IP_PUBLIC_EC2",
+    host="44.220.169.106",
     port=10000,
-    database="historicos"
+    database="gaia"
 )
 
 print("Connected to Hive")
@@ -16,6 +16,10 @@ print("Connected to Hive")
 cursor = conn.cursor()
 
 cursor.execute("""
-INSERT INTO eventos VALUES
-('3','api2',300,current_timestamp())
+show tables
 """)
+
+print(cursor.fetchall())
+
+cursor.close()
+conn.close()

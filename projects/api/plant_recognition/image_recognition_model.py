@@ -1,5 +1,7 @@
 import os
+import threading
 import uuid
+from datetime import datetime
 import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 from PIL import Image
@@ -19,6 +21,10 @@ AWS_SESSION_TOKEN = os.environ.get('AWS_SESSION_TOKEN')
 AWS_REGION = os.environ.get('AWS_REGION')
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME')
 
+USING_S3 = os.environ.get('USING_S3', 'false').strip().lower() == 'true'
+USING_EMR = os.environ.get('USING_EMR', 'false').strip().lower() == 'true'
+EMR_IP = os.environ.get('EMR_IP')
+
 s3_client = boto3.client(
     's3',
     aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -26,7 +32,59 @@ s3_client = boto3.client(
     aws_session_token=AWS_SESSION_TOKEN,
     region_name=AWS_REGION,
     config=Config(signature_version='s3v4')
-)
+) if USING_S3 else None
+
+def get_hive_connection():
+    from pyhive import hive
+    conn = hive.Connection(
+        host=EMR_IP,
+        port=10000,
+        database="gaia"
+    )
+    print(f"[Hive] Connected to {EMR_IP}")
+    return conn
+
+
+def _log_to_hive_sync(username, plant_name, confidence, s3_url):
+    print(f"[Hive] log_to_hive called: username={username}, plant={plant_name}, confidence={confidence}")
+    print(f"[Hive] USING_EMR={USING_EMR}, EMR_IP={EMR_IP}")
+    
+    if not USING_EMR or not EMR_IP:
+        print("[Hive] Skipped: EMR not enabled or no IP")
+        return
+    
+    conn = None
+    try:
+        conn = get_hive_connection()
+        print(f"[Hive] Connection result: {conn}")
+        cursor = conn.cursor()
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        sql = f"""
+            INSERT INTO gaia.plant_recognition_events VALUES
+            ('{uuid.uuid4()}', '{username}', '{plant_name}', {confidence}, '{s3_url}', '{timestamp}')
+        """
+        print(f"[Hive] Executing: {sql}")
+        cursor.execute(sql)
+        conn.commit()
+        print("[Hive] Insert successful")
+    except Exception as e:
+        print(f"[Hive] Failed to log: {e}")
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def log_to_hive(username, plant_name, confidence, s3_url):
+    # Keep HTTP response fast even if Hive is slow/unavailable.
+    t = threading.Thread(
+        target=_log_to_hive_sync,
+        args=(username, plant_name, confidence, s3_url),
+        daemon=True,
+    )
+    t.start()
 
 model = None
 processor = None
@@ -61,13 +119,18 @@ def recognize_plant(image_path: str, username: str = "uploads") -> dict:
     top_probability = topk.values[0].item()
     
     s3_url = None
-    if top_probability >= 0.25:
+    if USING_S3 and top_probability >= 0.25:
         s3_url = upload_to_s3(image_path, username)
+        if USING_EMR and EMR_IP:
+            best_plant = results[0]["plant"] if results else ""
+            log_to_hive(username, best_plant, round(top_probability, 4), s3_url)
     
     return {"predictions": results, "s3_url": s3_url}
 
 
 def upload_to_s3(image_path: str, username: str = "uploads") -> str:
+    if not s3_client:
+        return None
     ext = os.path.splitext(image_path)[1].lower()
     key = f"{username}/{uuid.uuid4()}{ext}"
     

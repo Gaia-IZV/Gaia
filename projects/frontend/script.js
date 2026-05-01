@@ -239,11 +239,11 @@
          return { ok: res.ok, status: res.status, data };
       }
 
-      async function sendPlantCare(query, base) {
+      async function sendPlantCare(query, base, username) {
          const res = await fetch(`${base}/plant`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query, k: 3 }),
+            body: JSON.stringify({ query, k: 3, username }),
          });
          const text = await res.text();
          let data;
@@ -314,7 +314,7 @@
                      );
                   } else {
                      thinking = startThinking(false);
-                     const care = await sendPlantCare(bestPlant, careBase());
+                     const care = await sendPlantCare(bestPlant, careBase(), username);
                      thinking.stop();
                      presentCareAssistantResponse(care);
                   }
@@ -337,7 +337,7 @@
 
          const thinking = startThinking(false);
          try {
-            const { ok, status, data } = await sendPlantCare(text, careBase());
+             const { ok, status, data } = await sendPlantCare(text, careBase(), username);
             thinking.stop();
             presentCareAssistantResponse({ ok, data });
          } catch (e) {
