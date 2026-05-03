@@ -2,6 +2,7 @@
     "use strict";
 
     const STORAGE_KEY = "gaia_username";
+    const MODEL_STORAGE_KEY = "gaia_care_provider";
 
     function getUsername() {
         return localStorage.getItem(STORAGE_KEY);
@@ -22,6 +23,7 @@
         const btnClearFile = document.getElementById("btn-clear-file");
         const btnSend = document.getElementById("btn-send");
         const btnAttach = document.getElementById("btn-attach");
+        const modelSelect = document.getElementById("model-select");
 
         const username = getUsername();
         headerEl.textContent = `Hola, ${username} 👋`;
@@ -34,7 +36,8 @@
             !fileChipName ||
             !btnClearFile ||
             !btnSend ||
-            !btnAttach
+            !btnAttach ||
+            !modelSelect
         ) {
             console.error(
                 "Gaia: faltan nodos en el HTML. ¿index.html desactualizado o caché antigua?"
@@ -56,11 +59,15 @@
                         ""
                     ),
                     care: window.GAIA_API_BASES.care.replace(/\/$/, ""),
+                    careRag: (
+                        window.GAIA_API_BASES.careRag || "/api/c-rag"
+                    ).replace(/\/$/, ""),
                 };
             }
             return {
                 recognition: "http://127.0.0.1:5000",
-                care: "http://127.0.0.1:5001",
+                care: "http://127.0.0.1:5002",
+                careRag: "http://127.0.0.1:5001",
             };
         }
 
@@ -70,6 +77,14 @@
 
         function careBase() {
             return defaultBases().care;
+        }
+
+        function careRagBase() {
+            return defaultBases().careRag;
+        }
+
+        function currentProvider() {
+            return modelSelect.value === "rag" ? "rag" : "llm";
         }
 
         const THINKING_TEXT = [
@@ -243,20 +258,30 @@
             return { ok: res.ok, status: res.status, data };
         }
 
-        async function sendPlantCare(query, base, username) {
-            const res = await fetch(`${base}/generate`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    prompt:
-                        "### Instruccion:\n" +
-                        `Dame informacion sobre el cuidado de la planta o consulta: ${query}.\n\n` +
-                        "### Respuesta:",
-                    username,
-                    max_new_tokens: 220,
-                    temperature: 0.7,
-                }),
-            });
+        async function sendPlantCare(query, username) {
+            const provider = currentProvider();
+            let res;
+            if (provider === "rag") {
+                res = await fetch(`${careRagBase()}/plant`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query, k: 3, username }),
+                });
+            } else {
+                res = await fetch(`${careBase()}/generate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        prompt:
+                            "### Instruccion:\n" +
+                            `Dame informacion sobre el cuidado de la planta o consulta: ${query}.\n\n` +
+                            "### Respuesta:",
+                        username,
+                        max_new_tokens: 220,
+                        temperature: 0.7,
+                    }),
+                });
+            }
             const text = await res.text();
             let data;
             try {
@@ -335,7 +360,6 @@
                             thinking = startThinking(false);
                             const care = await sendPlantCare(
                                 bestPlant,
-                                careBase(),
                                 username
                             );
                             thinking.stop();
@@ -367,7 +391,6 @@
             try {
                 const { ok, status, data } = await sendPlantCare(
                     text,
-                    careBase(),
                     username
                 );
                 thinking.stop();
@@ -407,6 +430,12 @@
         });
 
         btnClearFile.addEventListener("click", () => setFile(null));
+
+        modelSelect.value =
+            localStorage.getItem(MODEL_STORAGE_KEY) === "rag" ? "rag" : "llm";
+        modelSelect.addEventListener("change", () => {
+            localStorage.setItem(MODEL_STORAGE_KEY, currentProvider());
+        });
 
         updateInputMode();
         showEmptyHint();
