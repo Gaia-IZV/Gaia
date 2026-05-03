@@ -24,7 +24,7 @@ resource "null_resource" "sync_env_file" {
       "sudo mkdir -p /opt/gaia",
       "sudo mv /tmp/gaia.env /opt/gaia/.env",
       "sudo chown root:root /opt/gaia/.env",
-      "cd /opt/gaia && sudo docker compose pull plant-recognition plant-care && sudo docker compose up -d plant-recognition plant-care"
+      "cd /opt/gaia && sudo docker compose pull plant-recognition plant-care plant-care-llm && sudo docker compose up -d plant-recognition plant-care plant-care-llm"
     ]
   }
 }

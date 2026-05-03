@@ -1,4 +1,7 @@
 import os
+import threading
+import uuid
+from datetime import datetime
 from functools import lru_cache
 
 from dotenv import load_dotenv
@@ -14,6 +17,9 @@ load_dotenv(os.path.join(_API_ROOT, ".env"))
 app = Flask(__name__)
 CORS(app)
 
+USING_EMR = os.environ.get("USING_EMR", "false").strip().lower() == "true"
+EMR_IP = os.environ.get("EMR_IP")
+
 
 def _debug_mode() -> bool:
     value = os.environ.get("FLASK_DEBUG", "true").strip().lower()
@@ -25,6 +31,55 @@ def _hf_token() -> str:
     if not token:
         raise ValueError("HF_TOKEN is missing in environment")
     return token
+
+
+def get_hive_connection():
+    from pyhive import hive
+
+    conn = hive.Connection(
+        host=EMR_IP,
+        port=10000,
+        database="gaia",
+    )
+    print(f"[Hive] Connected to {EMR_IP}")
+    return conn
+
+
+def _log_plant_care_query_sync(username: str, query: str, response_preview: str):
+    if not USING_EMR or not EMR_IP:
+        return
+    conn = None
+    try:
+        conn = get_hive_connection()
+        cursor = conn.cursor()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        response_preview = (response_preview[:200] if response_preview else "").replace("'", "''").replace(",", ";")
+        query_escaped = query.replace("'", "''").replace(",", ";")
+        sql = f"""
+            INSERT INTO gaia.plant_care_queries VALUES
+            ('{uuid.uuid4()}', '{username}', '{query_escaped}', '{response_preview}', '{timestamp}')
+        """
+        cursor.execute(sql)
+        conn.commit()
+        print("[Hive] plant_care_llm query logged")
+    except Exception as exc:
+        print(f"[Hive] Failed to log plant_care_llm query: {exc}")
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def log_plant_care_query(username: str, query: str, response_preview: str):
+    # Keep HTTP response fast even if Hive is slow/unavailable.
+    t = threading.Thread(
+        target=_log_plant_care_query_sync,
+        args=(username, query, response_preview),
+        daemon=True,
+    )
+    t.start()
 
 
 @lru_cache(maxsize=1)
@@ -123,6 +178,7 @@ def whoami():
 def generate_post():
     body = request.get_json(silent=True) or {}
     prompt = _prompt_from_request(body)
+    username = str(body.get("username", "anonymous"))
     if not prompt:
         return jsonify({"error": "Missing JSON field 'prompt' or 'planta'"}), 400
 
@@ -135,6 +191,7 @@ def generate_post():
             max_new_tokens=max_new_tokens,
             temperature=temperature,
         )
+        log_plant_care_query(username, prompt, generated[:200])
         return jsonify(
             {
                 "repo_id": model_id,
@@ -150,6 +207,7 @@ def generate_post():
 @app.route("/generate", methods=["GET"])
 def generate_get():
     prompt = (request.args.get("prompt") or "").strip()
+    username = (request.args.get("username") or "anonymous").strip()
     planta = (request.args.get("planta") or "").strip()
     if not prompt and planta:
         prompt = (
@@ -166,6 +224,7 @@ def generate_get():
             max_new_tokens=int(request.args.get("max_new_tokens", "200")),
             temperature=float(request.args.get("temperature", "0.7")),
         )
+        log_plant_care_query(username, prompt, generated[:200])
         return jsonify(
             {
                 "repo_id": model_id,

@@ -59,6 +59,15 @@ services:
       - "5001"
     restart: unless-stopped
 
+  plant-care-llm:
+    image: ${dockerhub_user}/gaia-plant-care-llm-api:${api_tag}
+    pull_policy: always
+    env_file:
+      - .env
+    expose:
+      - "5002"
+    restart: unless-stopped
+
   frontend:
     image: ${dockerhub_user}/gaia-frontend:${web_tag}
     pull_policy: always
@@ -67,6 +76,7 @@ services:
     depends_on:
       - plant-recognition
       - plant-care
+      - plant-care-llm
     restart: unless-stopped
 EOF
 
