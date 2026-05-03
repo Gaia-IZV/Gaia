@@ -5,8 +5,17 @@ The Plant Care LLM API serves plant care answers using a Hugging Face model asso
 ## Model Strategy
 
 -   Primary model: `{whoami_username}/{HF_REPO_NAME}` (default repo name: `plantas-llm-finetuned`)
--   Fallback model: `HF_FALLBACK_MODEL_ID` (default: `Qwen/Qwen2.5-0.5B-Instruct`)
+-   Optional fallback model: `HF_FALLBACK_MODEL_ID` (empty by default; only used if you set it explicitly)
 -   Authentication: `HF_TOKEN` is required
+
+## Loading Notes
+
+The service loads the model similarly to the working notebook flow:
+
+-   `device_map="auto"` by default (toggle with `HF_USE_DEVICE_MAP`)
+-   `torch_dtype=torch.bfloat16`
+
+If you need `device_map="auto"`, the Docker image includes `accelerate`.
 
 ## Related Code
 

@@ -4,6 +4,8 @@ python-dotenv
 huggingface_hub
 transformers
 torch
+accelerate
+peft
 pyhive
 thrift
 thrift-sasl

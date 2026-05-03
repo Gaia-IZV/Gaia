@@ -7,7 +7,8 @@ from functools import lru_cache
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, hf_hub_download
+from peft import AutoPeftModelForCausalLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
@@ -94,25 +95,64 @@ def _hf_identity_and_repo() -> tuple[str, str]:
 
 
 @lru_cache(maxsize=2)
-def _hf_local_model(model_id: str) -> tuple[AutoTokenizer, AutoModelForCausalLM]:
+def _hf_local_model(model_id: str) -> tuple[AutoTokenizer, AutoModelForCausalLM | AutoPeftModelForCausalLM]:
     token = _hf_token()
     tokenizer = AutoTokenizer.from_pretrained(
         model_id,
         token=token,
         trust_remote_code=True,
     )
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        token=token,
-        trust_remote_code=True,
-        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-    )
-    model = model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    use_device_map = os.environ.get("HF_USE_DEVICE_MAP", "true").strip().lower() in ("1", "true", "yes")
+    torch_dtype = torch.bfloat16
+
+    is_adapter_repo = False
+    try:
+        hf_hub_download(repo_id=model_id, filename="adapter_config.json", token=token)
+        is_adapter_repo = True
+    except Exception:
+        is_adapter_repo = False
+
+    if is_adapter_repo:
+        if use_device_map:
+            model = AutoPeftModelForCausalLM.from_pretrained(
+                model_id,
+                token=token,
+                trust_remote_code=True,
+                device_map="auto",
+                torch_dtype=torch_dtype,
+            )
+        else:
+            model = AutoPeftModelForCausalLM.from_pretrained(
+                model_id,
+                token=token,
+                trust_remote_code=True,
+                torch_dtype=torch_dtype,
+            )
+            model = model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+        return tokenizer, model
+
+    if use_device_map:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            token=token,
+            trust_remote_code=True,
+            device_map="auto",
+            torch_dtype=torch_dtype,
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            token=token,
+            trust_remote_code=True,
+            torch_dtype=torch_dtype,
+        )
+        model = model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
     return tokenizer, model
 
 
 def _fallback_model_id() -> str:
-    return os.environ.get("HF_FALLBACK_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct").strip()
+    # Optional: only used if explicitly set in the environment.
+    return os.environ.get("HF_FALLBACK_MODEL_ID", "").strip()
 
 
 def _generate_with_fallback(prompt: str, max_new_tokens: int, temperature: float) -> tuple[str, str, str | None]:
@@ -123,6 +163,7 @@ def _generate_with_fallback(prompt: str, max_new_tokens: int, temperature: float
         candidates.append(fallback)
 
     last_exc: Exception | None = None
+    primary_exc: Exception | None = None
     for idx, model_id in enumerate(candidates):
         try:
             tokenizer, model = _hf_local_model(model_id)
@@ -138,13 +179,34 @@ def _generate_with_fallback(prompt: str, max_new_tokens: int, temperature: float
             generated = tokenizer.decode(outputs[0], skip_special_tokens=True)
             if "### Respuesta:" in generated:
                 generated = generated.split("### Respuesta:")[-1].strip()
-            fallback_reason = None if idx == 0 else f"primary_model_failed: {type(last_exc).__name__ if last_exc else 'unknown'}"
-            return model_id, generated.strip(), fallback_reason
+            if idx == 0:
+                return model_id, generated.strip(), None
+            return model_id, generated.strip(), f"primary_model_failed: {type(primary_exc).__name__}: {primary_exc}"
         except Exception as exc:
             last_exc = exc
+            if idx == 0:
+                primary_exc = exc
             continue
 
     raise RuntimeError(f"All candidate models failed. Last error: {type(last_exc).__name__}: {last_exc}")
+
+
+def _generate_primary(prompt: str, max_new_tokens: int, temperature: float) -> tuple[str, str]:
+    _, repo_id = _hf_identity_and_repo()
+    tokenizer, model = _hf_local_model(repo_id)
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    generated = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    if "### Respuesta:" in generated:
+        generated = generated.split("### Respuesta:")[-1].strip()
+    return repo_id, generated.strip()
 
 
 def _prompt_from_request(body: dict) -> str:
@@ -153,8 +215,8 @@ def _prompt_from_request(body: dict) -> str:
     if body.get("planta"):
         planta = str(body["planta"]).strip()
         return (
-            "### Instruccion:\n"
-            f"Dame informacion sobre el cuidado de la planta {planta}.\n\n"
+            "### Instrucción:\n"
+            f"Dame información sobre el cuidado de la planta {planta}.\n\n"
             "### Respuesta:"
         )
     return ""
@@ -186,11 +248,20 @@ def generate_post():
     temperature = float(body.get("temperature", 0.7))
 
     try:
-        model_id, generated, fallback_reason = _generate_with_fallback(
-            prompt=prompt,
-            max_new_tokens=max_new_tokens,
-            temperature=temperature,
-        )
+        fallback = _fallback_model_id()
+        if fallback:
+            model_id, generated, fallback_reason = _generate_with_fallback(
+                prompt=prompt,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+            )
+        else:
+            model_id, generated = _generate_primary(
+                prompt=prompt,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+            )
+            fallback_reason = None
         log_plant_care_query(username, prompt, generated[:200])
         return jsonify(
             {
@@ -211,19 +282,28 @@ def generate_get():
     planta = (request.args.get("planta") or "").strip()
     if not prompt and planta:
         prompt = (
-            "### Instruccion:\n"
-            f"Dame informacion sobre el cuidado de la planta {planta}.\n\n"
+            "### Instrucción:\n"
+            f"Dame información sobre el cuidado de la planta {planta}.\n\n"
             "### Respuesta:"
         )
     if not prompt:
         return jsonify({"error": "Missing query parameter 'prompt' or 'planta'"}), 400
 
     try:
-        model_id, generated, fallback_reason = _generate_with_fallback(
-            prompt=prompt,
-            max_new_tokens=int(request.args.get("max_new_tokens", "200")),
-            temperature=float(request.args.get("temperature", "0.7")),
-        )
+        fallback = _fallback_model_id()
+        if fallback:
+            model_id, generated, fallback_reason = _generate_with_fallback(
+                prompt=prompt,
+                max_new_tokens=int(request.args.get("max_new_tokens", "200")),
+                temperature=float(request.args.get("temperature", "0.7")),
+            )
+        else:
+            model_id, generated = _generate_primary(
+                prompt=prompt,
+                max_new_tokens=int(request.args.get("max_new_tokens", "200")),
+                temperature=float(request.args.get("temperature", "0.7")),
+            )
+            fallback_reason = None
         log_plant_care_query(username, prompt, generated[:200])
         return jsonify(
             {
