@@ -6,23 +6,20 @@
 graph TD;
 
     %% ───────────────
-    %% Data Ingestion
+    %% Notebooks / Preparation
     %% ───────────────
-    subgraph INGESTION["Data Ingestion and Orchestration"]
-        N8N --> EMR --> FLUME
+    subgraph PREP["Notebook Support Layer"]
+        N8N["n8n node (notebook usage)"] --> NOTEBOOKS["Notebooks / data preparation"]
     end
 
 
     %% ───────────────
-    %% Big Data Platform
+    %% Runtime Data Platform
     %% ───────────────
-    subgraph BIGDATA["Big Data Platform"]
-        HDFS
-        HUE
+    subgraph BIGDATA["Runtime Data Platform"]
+        HIVE["Apache Hive"]
+        S3
     end
-
-    FLUME --> HDFS
-    HUE --> HDFS
 
 
     %% ───────────────
@@ -43,26 +40,15 @@ graph TD;
     %% Backend
     %% ───────────────
     subgraph BACKEND["Application Backend"]
-        API
+        API["Recognition API + Care RAG API + Care LLM API"]
     end
 
-    API --> HDFS
+    NOTEBOOKS --> API
+    API --> HIVE
     API --> LLM
     API --> PRETRAINED_MODEL
     API --> KERAS_MODEL
-
-
-    %% ───────────────
-    %% Application Storage
-    %% ───────────────
-    subgraph STORAGE["Application Persistence Layer"]
-        STORAGE_FACADE["Persistence Service"]
-        MONGODB
-        S3
-
-        STORAGE_FACADE --> MONGODB
-        STORAGE_FACADE --> S3
-    end
+    API --> S3
 
 
     %% ───────────────
@@ -73,26 +59,26 @@ graph TD;
     end
 
     FRONT --> API
-    FRONT --> STORAGE_FACADE
 
 ```
 
 ## Development
 
--  Local development: `docs/development/local-development.md`
+-   Local development: `docs/development/local-development.md`
 
 ## APIs
 
--  Plant Recognition API: `docs/apis/plant-recognition.md`
--  Plant Care API: `docs/apis/plant-care.md`
+-   Plant Recognition API: `docs/apis/plant-recognition.md`
+-   Plant Care API: `docs/apis/plant-care.md`
+-   Plant Care LLM API: `docs/apis/plant-care-llm.md`
 
 ## Frontend
 
--  Frontend overview: `docs/frontend/overview.md`
+-   Frontend overview: `docs/frontend/overview.md`
 
 ## Infrastructure
 
--  Architecture: `docs/infrastructure/architecture.md`
--  AWS deployment with Terraform: `docs/infrastructure/deployment-aws.md`
--  n8n ingestion flow context: `docs/infrastructure/n8n-flow.md`
--  n8n flow documentation: `docs/n8n/flows.md`
+-   Architecture: `docs/infrastructure/architecture.md`
+-   AWS deployment with Terraform: `docs/infrastructure/deployment-aws.md`
+-   n8n ingestion flow context: `docs/infrastructure/n8n-flow.md`
+-   n8n flow documentation: `docs/n8n/flows.md`
