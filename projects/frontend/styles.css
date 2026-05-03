@@ -48,13 +48,70 @@ body {
 
 .app-header {
    flex-shrink: 0;
-   padding: 1rem;
-   text-align: center;
+   padding: 0.75rem 1rem;
+   border-bottom: 1px solid var(--border);
+   background: var(--surface);
+   position: relative;
+}
+
+.app-header-bar {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   min-height: 2.25rem;
+   padding-right: 0.25rem;
+}
+
+.app-header-greeting {
    font-size: 1.25rem;
    font-weight: 600;
    color: var(--accent);
-   border-bottom: 1px solid var(--border);
-   background: var(--surface);
+   text-align: center;
+   flex: 1;
+   min-width: 0;
+   padding: 0 7rem 0 0;
+}
+
+@media (max-width: 520px) {
+   .app-header-greeting {
+      font-size: 1.05rem;
+      padding-right: 0;
+      text-align: left;
+   }
+
+   .app-header-bar {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+   }
+
+   .btn-logout {
+      position: static;
+      transform: none;
+   }
+}
+
+.btn-logout {
+   position: absolute;
+   right: 1rem;
+   top: 50%;
+   transform: translateY(-50%);
+   flex-shrink: 0;
+   padding: 0.4rem 0.75rem;
+   font: inherit;
+   font-size: 0.8125rem;
+   font-weight: 500;
+   color: var(--text-muted);
+   background: transparent;
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   cursor: pointer;
+}
+
+.btn-logout:hover {
+   color: var(--text);
+   border-color: var(--text-muted);
+   background: var(--surface-hover);
 }
 
 .model-selector-wrap {

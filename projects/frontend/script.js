@@ -16,6 +16,7 @@
 
         const chatEl = document.getElementById("chat");
         const headerEl = document.getElementById("app-header");
+        const btnLogout = document.getElementById("btn-logout");
         const inputEl = document.getElementById("message-input");
         const fileInput = document.getElementById("file-input");
         const fileRow = document.getElementById("file-row");
@@ -28,6 +29,11 @@
         const username = getUsername();
         headerEl.textContent = `Hola, ${username} 👋`;
 
+        btnLogout.addEventListener("click", () => {
+            localStorage.removeItem(STORAGE_KEY);
+            window.location.href = "login.html";
+        });
+
         if (
             !chatEl ||
             !inputEl ||
@@ -37,7 +43,8 @@
             !btnClearFile ||
             !btnSend ||
             !btnAttach ||
-            !modelSelect
+            !modelSelect ||
+            !btnLogout
         ) {
             console.error(
                 "Gaia: faltan nodos en el HTML. ¿index.html desactualizado o caché antigua?"

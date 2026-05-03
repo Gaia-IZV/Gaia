@@ -9,7 +9,19 @@
     </head>
     <body>
         <div class="app">
-            <header class="app-header" id="app-header"></header>
+            <header class="app-header">
+                <div class="app-header-bar">
+                    <span id="app-header" class="app-header-greeting"></span>
+                    <button
+                        type="button"
+                        class="btn-logout"
+                        id="btn-logout"
+                        aria-label="Cerrar sesión"
+                    >
+                        Cerrar sesión
+                    </button>
+                </div>
+            </header>
             <div class="model-selector-wrap">
                 <label for="model-select">Modelo de cuidado</label>
                 <select
@@ -87,6 +99,6 @@
                 </div>
             </footer>
         </div>
-        <script src="script.js?v=8"></script>
+        <script src="script.js?v=9"></script>
     </body>
 </html>
