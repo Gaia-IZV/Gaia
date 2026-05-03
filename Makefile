@@ -1,4 +1,4 @@
-.PHONY: help up up-local down logs build-apis build-web login push-apis push-web tf-init tf-plan tf-apply tf-destroy tf-output
+.PHONY: help up up-local down logs build-apis build-web login push-apis push-web tf-init tf-plan tf-apply tf-destroy tf-output llm-install llm-run
 
 # Docker Hub (override: make up DOCKERHUB_USER=otro API_TAG=v1)
 DOCKERHUB_USER ?= eriktortarod
@@ -23,8 +23,8 @@ help: ## Mostrar objetivos
 	@echo "  make up          Pull APIs Hub + build frontend + arranque"
 	@echo "  make up-local    Igual sin pull (tras make build-apis, usa tus imágenes locales)"
 	@echo "  make down        Para y elimina contenedores"
-	@echo "  make logs        Logs de los tres servicios"
-	@echo "  make build-apis  Solo construir imágenes locales de las dos APIs (sin push)"
+	@echo "  make logs        Logs de los cuatro servicios"
+	@echo "  make build-apis  Solo construir imágenes locales de las tres APIs (sin push)"
 	@echo "  make build-web   Solo imagen del frontend"
 	@echo "  make login       docker login Docker Hub"
 	@echo "  make push-apis   build-apis + push a Docker Hub"
@@ -34,6 +34,8 @@ help: ## Mostrar objetivos
 	@echo "  make tf-apply    Aplicar infraestructura y desplegar stack en AWS"
 	@echo "  make tf-output   Mostrar URL/IP del despliegue"
 	@echo "  make tf-destroy  Eliminar infraestructura AWS"
+	@echo "  make llm-install Instalar dependencias del API plant_care_llm"
+	@echo "  make llm-run     Ejecutar API local de plant_care_llm (puerto 5002)"
 	@echo ""
 	@echo "Variables: DOCKERHUB_USER API_TAG WEB_TAG GAIA_HTTP_PORT"
 	@echo "AWS vars: TF_DIR AWS_INSTANCE_TYPE AWS_KEY_NAME AWS_ROOT_VOLUME_SIZE_GB AWS_INGRESS_HTTP_CIDR AWS_INGRESS_SSH_CIDR APP_ENV_FILE"
@@ -44,9 +46,10 @@ up: ## Pull APIs desde Hub (no las construye) + build frontend + http://localhos
 up-local: ## Sin pull: útil después de build-apis para probar imágenes locales sin subirlas
 	$(COMPOSE) up -d --build --pull never
 
-build-apis: ## Construir reconocimiento y cuidados localmente (mismo tag que push-apis)
+build-apis: ## Construir reconocimiento, cuidados y llm localmente (mismo tag que push-apis)
 	docker build -f docker/plant-recognition-api/Dockerfile -t $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(API_TAG) .
 	docker build -f docker/plant-care-api/Dockerfile -t $(DOCKERHUB_USER)/gaia-plant-care-api:$(API_TAG) .
+	docker build -f docker/plant-care-llm-api/Dockerfile -t $(DOCKERHUB_USER)/gaia-plant-care-llm-api:$(API_TAG) .
 
 down: ## Parar stack
 	$(COMPOSE) down
@@ -63,6 +66,7 @@ login: ## Iniciar sesión en Docker Hub
 push-apis: build-apis ## Push de las imágenes ya construidas a $(DOCKERHUB_USER)/*:$(API_TAG)
 	docker push $(DOCKERHUB_USER)/gaia-plant-recognition-api:$(API_TAG)
 	docker push $(DOCKERHUB_USER)/gaia-plant-care-api:$(API_TAG)
+	docker push $(DOCKERHUB_USER)/gaia-plant-care-llm-api:$(API_TAG)
 
 push-web: build-web ## Build frontend y push a $(DOCKERHUB_USER)/gaia-frontend:$(WEB_TAG)
 	docker push $(DOCKERHUB_USER)/gaia-frontend:$(WEB_TAG)
@@ -111,3 +115,9 @@ tf-destroy: ## Destruir infraestructura AWS
 		-var "app_env_file_path=$(abspath $(APP_ENV_FILE))" \
 		-var "ingress_http_cidr=$(AWS_INGRESS_HTTP_CIDR)" \
 		-var "ingress_ssh_cidr=$(AWS_INGRESS_SSH_CIDR)"
+
+llm-install: ## Instalar dependencias de projects/api/plant_care_llm (venv del repo)
+	./venv/bin/python -m pip install -r projects/api/plant_care_llm/requirements.txt
+
+llm-run: ## Ejecutar API plant_care_llm en local
+	FLASK_DEBUG=false ./venv/bin/python projects/api/plant_care_llm/main.py

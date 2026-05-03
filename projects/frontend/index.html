@@ -1,82 +1,82 @@
 <!DOCTYPE html>
 <html lang="es">
-   <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Gaia</title>
-      <link rel="stylesheet" href="styles.css" />
-      <script src="api-bases.js"></script>
-   </head>
-   <body>
-      <div class="app">
-         <header class="app-header" id="app-header"></header>
-         <main class="chat" id="chat" aria-live="polite"></main>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Gaia</title>
+        <link rel="stylesheet" href="styles.css" />
+        <script src="api-bases.js"></script>
+    </head>
+    <body>
+        <div class="app">
+            <header class="app-header" id="app-header"></header>
+            <main class="chat" id="chat" aria-live="polite"></main>
 
-         <footer class="composer-wrap">
-            <div class="composer">
-               <input
-                  type="file"
-                  id="file-input"
-                  accept="image/png,image/jpeg,image/webp"
-                  hidden
-               />
-               <button
-                  type="button"
-                  class="btn-icon"
-                  id="btn-attach"
-                  title="Solo imagen (sin texto)"
-                  aria-label="Adjuntar imagen"
-               >
-                  <svg
-                     width="20"
-                     height="20"
-                     viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="2"
-                  >
-                     <rect x="3" y="3" width="18" height="18" rx="2" />
-                     <circle cx="8.5" cy="8.5" r="1.5" />
-                     <path d="M21 15l-5-5L5 21" />
-                  </svg>
-               </button>
-               <div class="composer-input-wrap">
-                  <textarea
-                     id="message-input"
-                     rows="1"
-                     placeholder="Texto sobre una planta (sin imagen)…"
-                     autocomplete="off"
-                  ></textarea>
-                  <div class="file-row" id="file-row" hidden>
-                     <span class="file-chip" id="file-chip-name"></span>
-                     <button
+            <footer class="composer-wrap">
+                <div class="composer">
+                    <input
+                        type="file"
+                        id="file-input"
+                        accept="image/png,image/jpeg,image/webp"
+                        hidden
+                    />
+                    <button
                         type="button"
-                        class="btn-clear-file"
-                        id="btn-clear-file"
-                        aria-label="Quitar imagen"
-                     >
-                        ×
-                     </button>
-                  </div>
-               </div>
-               <button
-                  type="button"
-                  class="btn-send"
-                  id="btn-send"
-                  title="Enviar"
-               >
-                  <svg
-                     width="20"
-                     height="20"
-                     viewBox="0 0 24 24"
-                     fill="currentColor"
-                  >
-                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                  </svg>
-               </button>
-            </div>
-         </footer>
-      </div>
-      <script src="script.js?v=6"></script>
-   </body>
+                        class="btn-icon"
+                        id="btn-attach"
+                        title="Solo imagen (sin texto)"
+                        aria-label="Adjuntar imagen"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                    </button>
+                    <div class="composer-input-wrap">
+                        <textarea
+                            id="message-input"
+                            rows="1"
+                            placeholder="Texto sobre una planta (sin imagen)…"
+                            autocomplete="off"
+                        ></textarea>
+                        <div class="file-row" id="file-row" hidden>
+                            <span class="file-chip" id="file-chip-name"></span>
+                            <button
+                                type="button"
+                                class="btn-clear-file"
+                                id="btn-clear-file"
+                                aria-label="Quitar imagen"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn-send"
+                        id="btn-send"
+                        title="Enviar"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                    </button>
+                </div>
+            </footer>
+        </div>
+        <script src="script.js?v=7"></script>
+    </body>
 </html>

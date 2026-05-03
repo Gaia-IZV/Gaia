@@ -1,0 +1,7 @@
+# Installed after torch (CPU) in Dockerfile — keep in sync with projects/api/plant_care_llm/requirements.txt (minus torch).
+flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+numpy<2
+huggingface_hub==1.8.0
+transformers==5.4.0
