@@ -1,9 +1,7 @@
 import json
 import logging
 import os
-import threading
-import uuid
-from datetime import datetime
+import sys
 
 import requests
 from dotenv import load_dotenv
@@ -17,58 +15,14 @@ log = logging.getLogger(__name__)
 _GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 _GROQ_MODEL = "llama-3.3-70b-versatile"
 
-_API_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_APP_DIR = os.path.abspath(os.path.dirname(__file__))
+_API_ROOT = os.path.abspath(os.path.join(_APP_DIR, ".."))
+for _p in (_APP_DIR, _API_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 load_dotenv(os.path.join(_API_ROOT, ".env"))
 
-USING_EMR = os.environ.get('USING_EMR', 'false').strip().lower() == 'true'
-EMR_IP = os.environ.get('EMR_IP')
-
-def get_hive_connection():
-    from pyhive import hive
-    conn = hive.Connection(
-        host=EMR_IP,
-        port=10000,
-        database="gaia"
-    )
-    print(f"[Hive] Connected to {EMR_IP}")
-    return conn
-
-
-def _log_plant_care_query_sync(username, query, response_preview):
-    if not USING_EMR or not EMR_IP:
-        return
-    conn = None
-    try:
-        conn = get_hive_connection()
-        cursor = conn.cursor()
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        response_preview = (response_preview[:200] if response_preview else "").replace("'", "''").replace(",", ";")
-        query_escaped = query.replace("'", "''").replace(",", ";")
-        sql = f"""
-            INSERT INTO gaia.plant_care_queries VALUES
-            ('{uuid.uuid4()}', '{username}', '{query_escaped}', '{response_preview}', '{timestamp}')
-        """
-        cursor.execute(sql)
-        conn.commit()
-        print("[Hive] Plant care query logged")
-    except Exception as e:
-        print(f"[Hive] Failed to log plant care query: {e}")
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except Exception:
-                pass
-
-
-def log_plant_care_query(username, query, response_preview):
-    # Keep HTTP response fast even if Hive is slow/unavailable.
-    t = threading.Thread(
-        target=_log_plant_care_query_sync,
-        args=(username, query, response_preview),
-        daemon=True,
-    )
-    t.start()
+from hive_plant_care_log import log_plant_care_interaction  # noqa: E402
 
 app = Flask(__name__)
 CORS(app)
@@ -160,9 +114,16 @@ def plant_post():
         k_int = int(k)
     except (TypeError, ValueError):
         return jsonify({'error': "Invalid 'k'"}), 400
-    result = _plant_payload(str(q).strip(), k_int)
-    response_preview = result.get("humanized", "")[:200] if result.get("humanized") else ""
-    log_plant_care_query(username, q, response_preview)
+    query = str(q).strip()
+    result = _plant_payload(query, k_int)
+    log_plant_care_interaction(
+        username=username,
+        user_query=query,
+        source="rag",
+        k=k_int,
+        model_id=_GROQ_MODEL,
+        response=result.get("humanized"),
+    )
     return jsonify(result)
 
 
@@ -177,9 +138,16 @@ def plant_get():
         k_int = int(k_raw)
     except ValueError:
         return jsonify({'error': "Invalid 'k'"}), 400
-    result = _plant_payload(q.strip(), k_int)
-    response_preview = result.get("humanized", "")[:200] if result.get("humanized") else ""
-    log_plant_care_query(username, q, response_preview)
+    query = q.strip()
+    result = _plant_payload(query, k_int)
+    log_plant_care_interaction(
+        username=username,
+        user_query=query,
+        source="rag",
+        k=k_int,
+        model_id=_GROQ_MODEL,
+        response=result.get("humanized"),
+    )
     return jsonify(result)
 
 

@@ -34,11 +34,12 @@ If you need `device_map="auto"`, the Docker image includes `accelerate`.
 
 ## Hive Logging
 
-When `USING_EMR=true` and `EMR_IP` is set, this API logs care requests to:
+When `USING_EMR=true` and `EMR_IP` is set, this API logs to:
 
--   `gaia.plant_care_queries`
+-   `gaia.plant_care_queries` (`source=llm`, user question in `query`)
+-   `gaia.plant_care_responses` (full model output, `model_id`, optional `fallback_reason`)
 
-This keeps the same historical table used by the RAG-based care API.
+Same tables as the RAG-based Plant Care API (`source=rag`).
 
 ## Quick Local Run
 

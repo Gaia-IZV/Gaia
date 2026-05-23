@@ -1,7 +1,5 @@
 import os
-import threading
-import uuid
-from datetime import datetime
+import sys
 from functools import lru_cache
 
 from dotenv import load_dotenv
@@ -12,14 +10,17 @@ from peft import AutoPeftModelForCausalLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-_API_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_APP_DIR = os.path.abspath(os.path.dirname(__file__))
+_API_ROOT = os.path.abspath(os.path.join(_APP_DIR, ".."))
+for _p in (_APP_DIR, _API_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 load_dotenv(os.path.join(_API_ROOT, ".env"))
+
+from hive_plant_care_log import log_plant_care_interaction  # noqa: E402
 
 app = Flask(__name__)
 CORS(app)
-
-USING_EMR = os.environ.get("USING_EMR", "false").strip().lower() == "true"
-EMR_IP = os.environ.get("EMR_IP")
 
 
 def _debug_mode() -> bool:
@@ -32,55 +33,6 @@ def _hf_token() -> str:
     if not token:
         raise ValueError("HF_TOKEN is missing in environment")
     return token
-
-
-def get_hive_connection():
-    from pyhive import hive
-
-    conn = hive.Connection(
-        host=EMR_IP,
-        port=10000,
-        database="gaia",
-    )
-    print(f"[Hive] Connected to {EMR_IP}")
-    return conn
-
-
-def _log_plant_care_query_sync(username: str, query: str, response_preview: str):
-    if not USING_EMR or not EMR_IP:
-        return
-    conn = None
-    try:
-        conn = get_hive_connection()
-        cursor = conn.cursor()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        response_preview = (response_preview[:200] if response_preview else "").replace("'", "''").replace(",", ";")
-        query_escaped = query.replace("'", "''").replace(",", ";")
-        sql = f"""
-            INSERT INTO gaia.plant_care_queries VALUES
-            ('{uuid.uuid4()}', '{username}', '{query_escaped}', '{response_preview}', '{timestamp}')
-        """
-        cursor.execute(sql)
-        conn.commit()
-        print("[Hive] plant_care_llm query logged")
-    except Exception as exc:
-        print(f"[Hive] Failed to log plant_care_llm query: {exc}")
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except Exception:
-                pass
-
-
-def log_plant_care_query(username: str, query: str, response_preview: str):
-    # Keep HTTP response fast even if Hive is slow/unavailable.
-    t = threading.Thread(
-        target=_log_plant_care_query_sync,
-        args=(username, query, response_preview),
-        daemon=True,
-    )
-    t.start()
 
 
 @lru_cache(maxsize=1)
@@ -222,6 +174,20 @@ def _prompt_from_request(body: dict) -> str:
     return ""
 
 
+def _user_query_from_body(body: dict) -> str:
+    if body.get("planta"):
+        return str(body["planta"]).strip()
+    if body.get("prompt"):
+        return str(body["prompt"]).strip()
+    return ""
+
+
+def _user_query_from_args(prompt: str, planta: str) -> str:
+    if planta:
+        return planta.strip()
+    return prompt.strip()
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
@@ -262,7 +228,15 @@ def generate_post():
                 temperature=temperature,
             )
             fallback_reason = None
-        log_plant_care_query(username, prompt, generated[:200])
+        log_plant_care_interaction(
+            username=username,
+            user_query=_user_query_from_body(body),
+            source="llm",
+            k=None,
+            model_id=model_id,
+            response=generated,
+            fallback_reason=fallback_reason,
+        )
         return jsonify(
             {
                 "repo_id": model_id,
@@ -304,7 +278,15 @@ def generate_get():
                 temperature=float(request.args.get("temperature", "0.7")),
             )
             fallback_reason = None
-        log_plant_care_query(username, prompt, generated[:200])
+        log_plant_care_interaction(
+            username=username,
+            user_query=_user_query_from_args(prompt, planta),
+            source="llm",
+            k=None,
+            model_id=model_id,
+            response=generated,
+            fallback_reason=fallback_reason,
+        )
         return jsonify(
             {
                 "repo_id": model_id,

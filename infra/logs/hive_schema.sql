@@ -14,12 +14,26 @@ ROW FORMAT DELIMITED
 FIELDS TERMINATED BY '|'
 STORED AS TEXTFILE;
 
--- Table for plant care queries (optional, for tracking user queries)
+-- User plant-care queries (what was asked, from which API)
 CREATE TABLE IF NOT EXISTS gaia.plant_care_queries (
     id STRING,
     username STRING,
     query STRING,
-    response_preview STRING,
+    source STRING,
+    k INT,
+    event_timestamp STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '|'
+STORED AS TEXTFILE;
+
+-- Model responses linked to a query row
+CREATE TABLE IF NOT EXISTS gaia.plant_care_responses (
+    id STRING,
+    query_id STRING,
+    model_id STRING,
+    response STRING,
+    fallback_reason STRING,
     event_timestamp STRING
 )
 ROW FORMAT DELIMITED
