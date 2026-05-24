@@ -5,7 +5,7 @@ Gaia uses n8n to collect and export plant care data used by backend search compo
 ## Related Files
 
 -  Flow JSON: `projects/n8n/getPlantCareData.json`
--  Detailed flow notes: `docs/n8n/flows.md`
+-  Detailed flow notes and workflow diagram: `docs/n8n/flows.md`
 -  Plant Care semantic search: `projects/api/plant_care/plant_semantic_search.py`
 -  Index builder: `projects/api/plant_care/build_faiss_index.py`
 

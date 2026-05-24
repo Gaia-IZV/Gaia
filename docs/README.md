@@ -1,5 +1,7 @@
 # Documentation Index
 
+Runtime AI stack: **one** image classifier (ViT), **two** LLM paths (fine-tuned Hugging Face model vs. FAISS retrieval + Groq).
+
 ## Architecture Diagram (Detailed)
 
 ```mermaid
@@ -27,11 +29,17 @@ graph TD;
     %% ───────────────
     subgraph AI["Artificial Intelligence Layer"]
 
-        LLM
+        subgraph CLASSIFICATION["Image Classification"]
+            VIT_MODEL["ViT classifier (Hugging Face)"]
+        end
 
-        subgraph CLASSIFICATION["Image Classification System"]
-            PRETRAINED_MODEL["Pretrained Classification Model"]
-            KERAS_MODEL["Custom Classification Model (Keras)"]
+        subgraph LLMS["Language Models"]
+            LLM_FT["Fine-tuned LLM (Hugging Face)"]
+            subgraph RAG_PIPELINE["RAG pipeline"]
+                FAISS["FAISS semantic search"]
+                GROQ_LLM["Groq LLM (llama-3.3-70b)"]
+                FAISS --> GROQ_LLM
+            end
         end
     end
 
@@ -40,15 +48,21 @@ graph TD;
     %% Backend
     %% ───────────────
     subgraph BACKEND["Application Backend"]
-        API["Recognition API + Care RAG API + Care LLM API"]
+        REC_API["Plant Recognition API"]
+        CARE_RAG_API["Plant Care RAG API"]
+        CARE_LLM_API["Plant Care LLM API"]
     end
 
-    NOTEBOOKS --> API
-    API --> HIVE
-    API --> LLM
-    API --> PRETRAINED_MODEL
-    API --> KERAS_MODEL
-    API --> S3
+    NOTEBOOKS --> REC_API
+    NOTEBOOKS --> CARE_RAG_API
+    NOTEBOOKS --> CARE_LLM_API
+    REC_API --> HIVE
+    CARE_RAG_API --> HIVE
+    CARE_LLM_API --> HIVE
+    REC_API --> VIT_MODEL
+    REC_API --> S3
+    CARE_RAG_API --> RAG_PIPELINE
+    CARE_LLM_API --> LLM_FT
 
 
     %% ───────────────
@@ -58,7 +72,9 @@ graph TD;
         FRONT
     end
 
-    FRONT --> API
+    FRONT --> REC_API
+    FRONT --> CARE_RAG_API
+    FRONT --> CARE_LLM_API
 
 ```
 

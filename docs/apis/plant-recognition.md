@@ -18,8 +18,10 @@ We use a pre-trained model from Hugging Face: **`juppy44/plant-identification-2m
 
 ## Related Notebooks
 
--  `projects/notebooks/modelo_prediccion_preentrenado.ipynb`
--  `projects/notebooks/ModeloCNN.ipynb`
+Exploratory / training notebooks (not deployed as separate APIs):
+
+-  `projects/notebooks/modelo_prediccion_preentrenado.ipynb` — same ViT family as production
+-  `projects/notebooks/ModeloCNN.ipynb` — custom CNN experiments (superseded by the ViT model above)
 
 ## Endpoint Summary
 

@@ -1,6 +1,6 @@
 # Plant Care LLM API
 
-The Plant Care LLM API serves plant care answers using a Hugging Face model associated with the authenticated user.
+The Plant Care LLM API serves plant care answers with a **fine-tuned causal LLM** on Hugging Face (per-user repo). This is separate from the RAG + Groq path documented in `docs/apis/plant-care.md`.
 
 ## Model Strategy
 

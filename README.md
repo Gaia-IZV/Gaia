@@ -1,10 +1,11 @@
 # Gaia <img src="static/images/logo_small.jpg" alt="Gaia logo" width="26" style="margin-left: 8px; vertical-align: middle;" />
 
-Gaia is an AI-assisted plant support project with two backend APIs and a web frontend:
+Gaia is an AI-assisted plant support project with three backend APIs and a web frontend:
 
--   Plant image recognition (computer vision model inference)
--   Plant care retrieval (semantic search over curated plant data)
--   Browser frontend that routes both workflows through a single HTTP entrypoint
+-   Plant image recognition (ViT image classification via Hugging Face)
+-   Plant care with RAG (FAISS semantic search + Groq LLM for natural-language answers)
+-   Plant care with a fine-tuned LLM (Hugging Face causal model per user)
+-   Browser frontend that routes all workflows through a single HTTP entrypoint
 
 ## Architecture Diagram (Simple)
 
@@ -18,8 +19,9 @@ graph TD;
     NOTEBOOKS --> APIS["APIs"]
 
     APIS --> HIVE
-    APIS --> LLMS["LLMs"]
-    APIS --> CLASSIFICATION_MODEL["Classification Model"]
+    APIS --> LLM_FT["Fine-tuned LLM (HF)"]
+    APIS --> LLM_RAG["RAG + Groq LLM"]
+    APIS --> CLASSIFICATION["ViT classification model"]
     APIS --> S3
 
     FRONTEND["Frontend"] --> APIS
@@ -46,7 +48,8 @@ graph TD;
 -   [Documentation index](docs/README.md)
 -   [Local development](docs/development/local-development.md)
 -   [Plant Recognition API](docs/apis/plant-recognition.md)
--   [Plant Care API](docs/apis/plant-care.md)
+-   [Plant Care API (RAG)](docs/apis/plant-care.md)
+-   [Plant Care LLM API (fine-tuned)](docs/apis/plant-care-llm.md)
 -   [Frontend overview](docs/frontend/overview.md)
 -   [Architecture](docs/infrastructure/architecture.md)
 -   [AWS deployment with Terraform](docs/infrastructure/deployment-aws.md)

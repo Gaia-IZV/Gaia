@@ -1,6 +1,6 @@
 # Plant Care API
 
-The Plant Care API (RAG path) answers care-related questions using semantic search over a plant dataset.
+The Plant Care API (RAG path) answers care-related questions using semantic search over a plant dataset, then a hosted LLM (Groq) — not a second image classifier.
 
 ## Data Pipeline
 

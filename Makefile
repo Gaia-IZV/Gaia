@@ -1,4 +1,4 @@
-.PHONY: help up up-local down logs build-apis build-web login push-apis push-web tf-init tf-plan tf-apply tf-destroy tf-output llm-install llm-run
+.PHONY: help up up-local down logs build-apis build-web login push-apis push-web tf-init tf-plan tf-apply tf-destroy tf-output llm-install llm-run n8n-start n8n-stop n8n-rm
 
 # Docker Hub (override: make up DOCKERHUB_USER=otro API_TAG=v1)
 DOCKERHUB_USER ?= eriktortarod
@@ -36,6 +36,9 @@ help: ## Mostrar objetivos
 	@echo "  make tf-destroy  Eliminar infraestructura AWS"
 	@echo "  make llm-install Instalar dependencias del API plant_care_llm"
 	@echo "  make llm-run     Ejecutar API local de plant_care_llm (puerto 5002)"
+	@echo "  make n8n-start   Construir (si falta) e iniciar n8n en :5678"
+	@echo "  make n8n-stop    Parar contenedor n8n"
+	@echo "  make n8n-rm      Eliminar contenedor n8n"
 	@echo ""
 	@echo "Variables: DOCKERHUB_USER API_TAG WEB_TAG GAIA_HTTP_PORT"
 	@echo "AWS vars: TF_DIR AWS_INSTANCE_TYPE AWS_KEY_NAME AWS_ROOT_VOLUME_SIZE_GB AWS_INGRESS_HTTP_CIDR AWS_INGRESS_SSH_CIDR APP_ENV_FILE"
@@ -121,3 +124,24 @@ llm-install: ## Instalar dependencias de projects/api/plant_care_llm (venv del r
 
 llm-run: ## Ejecutar API plant_care_llm en local
 	FLASK_DEBUG=false ./venv/bin/python projects/api/plant_care_llm/main.py
+
+## n8n (flujo: projects/n8n/getPlantCareData.json)
+n8n-start: ## Construir imagen e iniciar n8n si no existe; si no, docker start
+	@if docker ps -a --format '{{.Names}}' | grep -qx n8n; then \
+		docker start n8n; \
+	else \
+		echo "Building n8n image..."; \
+		cd docker && docker build -f Dockerfile.n8n -t n8n .; \
+		docker run -d \
+			--name n8n \
+			-p 5678:5678 \
+			-v ~/.n8n:/home/node/.n8n \
+			n8n; \
+	fi
+	@echo "n8n: http://localhost:5678"
+
+n8n-stop: ## Parar contenedor n8n
+	@docker stop n8n
+
+n8n-rm: ## Eliminar contenedor n8n (parado o en ejecución)
+	@docker rm -f n8n

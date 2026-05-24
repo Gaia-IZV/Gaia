@@ -10,6 +10,12 @@ This document summarizes the current Gaia architecture and runtime layers.
 -   **Storage and services**: Apache Hive (historical tables) and optional S3 image storage
 -   **Deployment**: local Docker Compose and AWS EC2 (Terraform + Docker Compose)
 
+## AI Components
+
+-   **Image classification (one model)**: Plant Recognition API uses the ViT checkpoint `juppy44/plant-identification-2m-vit-b` (see `docs/apis/plant-recognition.md`). Older notebooks (`ModeloCNN.ipynb`, etc.) are exploratory; they are not separate production models.
+-   **LLM with fine-tuning**: Plant Care LLM API loads a user-specific Hugging Face causal model (default repo `plantas-llm-finetuned`; see `docs/apis/plant-care-llm.md`).
+-   **LLM with RAG**: Plant Care RAG API retrieves context with FAISS, then calls Groq (`llama-3.3-70b-versatile`) to generate the answer — a standard hosted LLM, not a second classifier (see `docs/apis/plant-care.md`).
+
 ## Storage (S3)
 
 We use AWS S3 to store uploaded plant images:
